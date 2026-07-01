@@ -366,7 +366,8 @@
   <div id="result" aria-live="polite"></div>
 
   <footer>
-    Weather and location search from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a><br>
+    Weather and location search from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
+    current-location lookup © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors<br>
     Heat-stress effect on race pace: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8677617/" target="_blank" rel="noopener">Mantzios et al., 2022, Med Sci Sports Exerc</a><br>
     Default adjustment scale adapted from <a href="https://runnersconnect.net/dew-point-effect-running/" target="_blank" rel="noopener">RunnersConnect</a><br>
     A guide, not gospel — trust how you feel out there.
@@ -565,13 +566,33 @@
   });
 
   // ---- use my location ----
+  async function reverseGeocode(lat, lon){
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=10&addressdetails=1`;
+      const res = await fetch(url, { headers: { "Accept-Language": "en" } });
+      if (!res.ok) return null;
+      const d = await res.json();
+      const a = d.address || {};
+      const place = a.city || a.town || a.village || a.hamlet || a.county;
+      const region = a.state || a.region || a.country;
+      const name = [place, region].filter(Boolean).join(", ");
+      return name || null;
+    } catch { return null; }
+  }
+
   geoBtn.addEventListener("click", () => {
     if (!navigator.geolocation) return showError("geounsupported");
     geoBtn.disabled = true;
     navigator.geolocation.getCurrentPosition(
       pos => {
         geoBtn.disabled = false;
-        selectLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude, name: "Current location" });
+        const lat = pos.coords.latitude, lon = pos.coords.longitude;
+        selectLocation({ lat, lon, name: "Current location" });
+        reverseGeocode(lat, lon).then(name => {
+          if (name && selectedLoc && selectedLoc.lat === lat && selectedLoc.lon === lon){
+            selectLocation({ lat, lon, name });
+          }
+        });
       },
       err => {
         geoBtn.disabled = false;
