@@ -688,23 +688,36 @@
   renderScale();
 
   // ---- fetch + compute ----
-  async function getDewPoint(lat, lon, unit){
+  async function getConditions(lat, lon, unit){
     const tu = unit === "f" ? "fahrenheit" : "celsius";
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
-      + `&current=dew_point_2m&hourly=dew_point_2m&temperature_unit=${tu}&timezone=auto&forecast_days=1`;
+      + `&current=dew_point_2m,temperature_2m&hourly=dew_point_2m,temperature_2m&temperature_unit=${tu}&timezone=auto&forecast_days=1`;
     let res;
     try { res = await fetch(url); }
     catch { throw new Error("net"); }
     if (!res.ok) throw new Error("weather");
     const d = await res.json();
-    let dew = d.current && typeof d.current.dew_point_2m === "number" ? d.current.dew_point_2m : null;
-    if (dew === null && d.hourly && d.hourly.dew_point_2m){      // fallback: nearest hour
-      const series = d.hourly.dew_point_2m;
-      const hr = new Date().getHours();
-      dew = series[hr] ?? series.find(v => typeof v === "number");
+    const hr = new Date().getHours();
+    function pick(field){
+      let v = d.current && typeof d.current[field] === "number" ? d.current[field] : null;
+      if (v === null && d.hourly && d.hourly[field]){      // fallback: nearest hour
+        const series = d.hourly[field];
+        v = series[hr] ?? series.find(x => typeof x === "number");
+      }
+      return typeof v === "number" ? v : null;
     }
-    if (typeof dew !== "number") throw new Error("weather");
-    return dew;
+    const dew = pick("dew_point_2m");
+    const temp = pick("temperature_2m");
+    if (dew === null || temp === null) throw new Error("weather");
+    return { dew, temp };
+  }
+
+  // heat adds on top of the dew point scale: 85-90°F +1%, 90-95°F +2%, 95°F+ +4%
+  const HEAT_BANDS = [{ f: 95, add: 4 }, { f: 90, add: 2 }, { f: 85, add: 1 }];
+  function heatAdjustmentFor(temp, unit){
+    const tempF = unit === "f" ? temp : temp * 9/5 + 32;
+    const band = HEAT_BANDS.find(b => tempF >= b.f);
+    return band ? band.add : 0;
   }
 
   const ERRORS = {
@@ -735,8 +748,8 @@
     resultEl.innerHTML = "";
 
     try {
-      const dew = await getDewPoint(selectedLoc.lat, selectedLoc.lon, state.tempUnit);
-      renderResult(selectedLoc, dew, baseSec);
+      const { dew, temp } = await getConditions(selectedLoc.lat, selectedLoc.lon, state.tempUnit);
+      renderResult(selectedLoc, dew, temp, baseSec);
     } catch (err){
       showError(err.message);
     } finally {
@@ -751,14 +764,17 @@
     }[c]));
   }
 
-  function renderResult(loc, dew, baseSec){
-    const { pct, bumped } = adjustmentFor(dew);
+  function renderResult(loc, dew, temp, baseSec){
+    const { pct: dewPct, bumped } = adjustmentFor(dew);
+    const heatAdd = heatAdjustmentFor(temp, state.tempUnit);
+    const pct = dewPct + heatAdd;
     const adj = baseSec * (1 + pct/100);
     const delta = Math.round(adj - baseSec);
     const sev = severity(pct);
     const unit = "/ " + state.paceUnit;
     const tempU = "°" + state.tempUnit.toUpperCase();
     const dewTxt = (Math.round(dew*10)/10) + tempU;
+    const tempTxt = (Math.round(temp*10)/10) + tempU;
 
     // build dew-point track
     const rows = [...curScale()].sort((a,b)=>a.t-b.t);
@@ -797,13 +813,14 @@
 
           <div class="band-tag"><span class="dot"></span>${sev.label} · ${pct}% slower</div>
           ${bumped ? `<p class="note">↑ Within ${NEAR_THRESHOLD}° of the next level, so we rounded up to be safe.</p>` : ""}
+          ${heatAdd ? `<p class="note">🌡 +${heatAdd}% added for air temp (${tempTxt}).</p>` : ""}
 
           <div class="track-wrap">
             <div class="track">${segHTML}<span class="needle" style="left:${needlePct}%"></span></div>
             <div class="track-labels"><span>${Math.round(domMin)}${tempU}</span><span>${Math.round(domMax)}${tempU}</span></div>
           </div>
 
-          <p class="reading">Dew point now: <b>${dewTxt}</b></p>
+          <p class="reading">Dew point now: <b>${dewTxt}</b> · Air temp: <b>${tempTxt}</b></p>
         </div>
       </div>`;
   }
