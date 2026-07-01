@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2D353B" id="theme-color-meta">
+<title>Dew Point Pace Converter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root,
+  [data-theme="dark"]{
+    --paper:#2D353B;
+    --paper-2:#343F44;
+    --ink:#D3C6AA;
+    --ink-soft:#9DA9A0;
+    --line:#475258;
+    --pine:#A7C080;
+    --pine-2:#83C092;
+    --field:#343F44;
+
+    /* severity ramp — cool to hot (everforest accents) */
+    --s0:#A7C080;  /* ideal    — green  */
+    --s1:#83C092;  /* mild     — aqua   */
+    --s2:#DBBC7F;  /* moderate — yellow */
+    --s3:#E69875;  /* hard     — orange */
+    --s4:#E67E80;  /* severe   — red    */
+
+    --radius:14px;
+    --shadow:0 1px 2px rgba(0,0,0,.18), 0 8px 24px rgba(0,0,0,.22);
+  }
+
+  [data-theme="light"]{
+    --paper:#FFFBEF;
+    --paper-2:#F2EFDB;
+    --ink:#5C6A72;
+    --ink-soft:#829181;
+    --line:#E8E5CF;
+    --pine:#8DA101;
+    --pine-2:#35A77C;
+    --field:#FFFFFF;
+
+    --s0:#8DA101;  /* ideal    — green  */
+    --s1:#35A77C;  /* mild     — aqua   */
+    --s2:#DFA000;  /* moderate — yellow */
+    --s3:#F57D26;  /* hard     — orange */
+    --s4:#F85552;  /* severe   — red    */
+
+    --shadow:0 1px 2px rgba(92,106,114,.06), 0 8px 24px rgba(92,106,114,.08);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"DM Sans",system-ui,sans-serif;
+    font-size:16px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+    padding:max(20px,env(safe-area-inset-top)) 18px 56px;
+    display:flex;
+    justify-content:center;
+    transition:background .15s ease, color .15s ease;
+  }
+  .wrap{width:100%;max-width:440px}
+
+  /* ---- header ---- */
+  header{margin:6px 0 22px}
+  .header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .eyebrow{
+    font-family:"DM Mono",monospace;
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--pine-2);margin:0 0 6px;
+  }
+  .theme-toggle{
+    flex:none;width:34px;height:34px;border-radius:9px;
+    border:1px solid var(--line);background:var(--field);color:var(--ink);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font-size:15px;line-height:1;transition:background .15s ease;
+  }
+  .theme-toggle:hover{background:var(--paper-2)}
+  h1{
+    font-family:"Fraunces",serif;
+    font-weight:500;font-size:34px;line-height:1.04;
+    letter-spacing:-.01em;margin:0;
+    font-variation-settings:"opsz" 60;
+  }
+  .sub{color:var(--ink-soft);font-size:14px;margin:8px 0 0;max-width:36ch}
+
+  /* ---- card ---- */
+  .card{
+    background:var(--field);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:18px;
+    margin-bottom:16px;
+  }
+
+  label{display:block;font-size:13px;font-weight:500;color:var(--ink-soft);margin:0 0 6px}
+  .row{margin-bottom:16px}
+  .row:last-child{margin-bottom:0}
+
+  input[type=text],input[type=tel]{
+    width:100%;font-family:"DM Mono",monospace;font-size:18px;
+    padding:13px 14px;border:1px solid var(--line);border-radius:10px;
+    background:var(--paper);color:var(--ink);
+  }
+  input::placeholder{color:var(--ink-soft);opacity:.6}
+  input:focus-visible,button:focus-visible,.seg button:focus-visible{
+    outline:2px solid var(--pine-2);outline-offset:2px;
+  }
+
+  .pace-line{display:flex;gap:10px;align-items:stretch}
+  .pace-line input{flex:1}
+
+  /* segmented toggle */
+  .seg{display:inline-flex;background:var(--paper-2);border-radius:10px;padding:3px;gap:2px}
+  .seg button{
+    border:0;background:transparent;cursor:pointer;
+    font-family:"DM Sans",sans-serif;font-size:14px;font-weight:500;color:var(--ink-soft);
+    padding:9px 13px;border-radius:8px;line-height:1;white-space:nowrap;
+  }
+  .seg button[aria-pressed=true]{background:var(--field);color:var(--ink);box-shadow:0 1px 2px rgba(21,33,27,.12)}
+
+  .inline{display:flex;justify-content:space-between;align-items:center;gap:12px}
+
+  /* primary action */
+  .go{
+    width:100%;border:0;cursor:pointer;
+    background:var(--pine);color:var(--paper);
+    font-family:"DM Sans",sans-serif;font-size:16px;font-weight:600;
+    padding:15px;border-radius:12px;margin-top:2px;
+    transition:background .15s ease, transform .04s ease, filter .15s ease;
+  }
+  .go:hover{filter:brightness(1.08)}
+  .go:active{transform:translateY(1px)}
+  .go[disabled]{opacity:.6;cursor:default;transform:none}
+
+  /* ---- result ---- */
+  #result{margin-top:16px}
+  .result-card{
+    background:var(--field);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;
+    opacity:0;transform:translateY(6px);
+    animation:rise .32s cubic-bezier(.2,.7,.3,1) forwards;
+  }
+  @keyframes rise{to{opacity:1;transform:none}}
+  .accent-bar{height:5px;background:var(--accent,var(--s0))}
+  .result-body{padding:20px 18px}
+
+  .place{font-family:"DM Mono",monospace;font-size:12px;letter-spacing:.04em;color:var(--ink-soft);margin:0 0 14px}
+  .place b{color:var(--ink);font-weight:500}
+
+  .hero{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .pace-big{
+    font-family:"Fraunces",serif;font-weight:500;
+    font-size:60px;line-height:.95;letter-spacing:-.02em;
+    color:var(--accent,var(--ink));
+    font-variation-settings:"opsz" 144;
+  }
+  .pace-unit{font-family:"DM Mono",monospace;font-size:13px;color:var(--ink-soft)}
+  .delta{
+    font-family:"DM Mono",monospace;font-size:14px;font-weight:500;
+    color:var(--accent,var(--ink));margin:10px 0 0;
+  }
+  .delta .from{color:var(--ink-soft)}
+
+  .band-tag{
+    display:inline-flex;align-items:center;gap:7px;
+    font-size:13px;font-weight:600;color:var(--accent,var(--ink));
+    margin:18px 0 12px;
+  }
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--accent,var(--s0))}
+
+  /* dew point track (signature) */
+  .track-wrap{margin-top:4px}
+  .track{position:relative;height:12px;border-radius:6px;overflow:hidden;display:flex}
+  .track .seg-fill{height:100%}
+  .needle{
+    position:absolute;top:-5px;width:2px;height:22px;background:var(--ink);
+    border-radius:2px;transform:translateX(-1px);
+    box-shadow:0 0 0 2px var(--field);
+  }
+  .track-labels{
+    display:flex;justify-content:space-between;
+    font-family:"DM Mono",monospace;font-size:11px;color:var(--ink-soft);margin-top:6px;
+  }
+  .reading{
+    font-family:"DM Mono",monospace;font-size:13px;color:var(--ink-soft);margin:14px 0 0;
+  }
+  .reading b{color:var(--ink);font-weight:500}
+
+  /* error / status */
+  .status{
+    font-size:14px;padding:13px 14px;border-radius:10px;margin-top:16px;
+    background:color-mix(in srgb, var(--s4) 16%, var(--field));
+    border:1px solid color-mix(in srgb, var(--s4) 45%, var(--field));
+    color:var(--s4);
+  }
+
+  .note{
+    font-size:12.5px;color:var(--ink-soft);margin:8px 0 0;
+    display:flex;align-items:center;gap:6px;
+  }
+
+  /* ---- scale editor ---- */
+  details.scale{
+    background:var(--field);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);margin-bottom:16px;
+  }
+  details.scale>summary{
+    list-style:none;cursor:pointer;padding:16px 18px;
+    display:flex;justify-content:space-between;align-items:center;
+    font-weight:600;font-size:15px;
+  }
+  details.scale>summary::-webkit-details-marker{display:none}
+  .chev{color:var(--ink-soft);transition:transform .2s ease;font-family:"DM Mono",monospace}
+  details.scale[open] .chev{transform:rotate(90deg)}
+  .scale-inner{padding:0 18px 18px}
+  .scale-note{font-size:13px;color:var(--ink-soft);margin:0 0 14px}
+
+  table{width:100%;border-collapse:collapse}
+  th{
+    text-align:left;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+    color:var(--ink-soft);padding:0 0 8px;
+  }
+  td{padding:5px 0}
+  .scale-row td:first-child{width:42%}
+  .scale-row td:nth-child(2){width:42%}
+  .scale-row td:last-child{width:16%;text-align:right}
+  .scale-row input{
+    width:100%;font-family:"DM Mono",monospace;font-size:15px;
+    padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--paper);
+  }
+  .cell{display:flex;align-items:center;gap:6px}
+  .cell .swatch{width:8px;height:8px;border-radius:2px;flex:none}
+  .cell .suffix{font-family:"DM Mono",monospace;font-size:13px;color:var(--ink-soft)}
+  .del{
+    border:0;background:transparent;color:var(--ink-soft);cursor:pointer;
+    font-size:18px;line-height:1;padding:6px;border-radius:6px;
+  }
+  .del:hover{background:var(--paper-2);color:var(--s4)}
+  .scale-actions{display:flex;gap:10px;margin-top:14px}
+  .ghost{
+    border:1px solid var(--line);background:var(--field);cursor:pointer;
+    font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;color:var(--ink);
+    padding:9px 13px;border-radius:9px;
+  }
+  .ghost:hover{background:var(--paper-2)}
+
+  footer{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:26px;line-height:1.6}
+  footer a{color:var(--pine-2);text-decoration:none}
+  footer a:hover{text-decoration:underline}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="header-top">
+      <p class="eyebrow">Effort vs. Humidity</p>
+      <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" aria-pressed="false">
+        <span class="theme-icon" aria-hidden="true">☾</span>
+      </button>
+    </div>
+    <h1>Dew Point Pace Converter</h1>
+    <p class="sub">High dew point means your sweat won't evaporate, so the same effort costs you speed. Plug in today's conditions and get the pace your body will actually hold.</p>
+  </header>
+
+  <div class="card">
+    <div class="row">
+      <label for="zip">ZIP code</label>
+      <input id="zip" type="tel" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="68510">
+    </div>
+
+    <div class="row">
+      <label for="pace">Target pace</label>
+      <div class="pace-line">
+        <input id="pace" type="text" inputmode="numeric" placeholder="8:00">
+        <div class="seg" role="group" aria-label="Pace unit">
+          <button type="button" data-pace-unit="mi" aria-pressed="true">/ mi</button>
+          <button type="button" data-pace-unit="km" aria-pressed="false">/ km</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="row inline">
+      <label style="margin:0">Temperature unit</label>
+      <div class="seg" role="group" aria-label="Temperature unit">
+        <button type="button" data-temp-unit="f" aria-pressed="true">°F</button>
+        <button type="button" data-temp-unit="c" aria-pressed="false">°C</button>
+      </div>
+    </div>
+
+    <button id="go" class="go">Check conditions</button>
+  </div>
+
+  <details class="scale">
+    <summary>Adjustment scale <span class="chev">›</span></summary>
+    <div class="scale-inner">
+      <p class="scale-note">At each dew point threshold, slow your target by this much. Edit freely — your numbers are saved on this device. Below the lowest row counts as ideal (0%).</p>
+      <table>
+        <thead>
+          <tr><th>Dew point ≥</th><th>Slow by</th><th></th></tr>
+        </thead>
+        <tbody id="scale-body"></tbody>
+      </table>
+      <div class="scale-actions">
+        <button type="button" class="ghost" id="add-row">+ Add row</button>
+        <button type="button" class="ghost" id="reset-scale">Reset to defaults</button>
+      </div>
+    </div>
+  </details>
+
+  <div id="result" aria-live="polite"></div>
+
+  <footer>
+    Weather from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
+    ZIP lookup from <a href="https://zippopotam.us" target="_blank" rel="noopener">Zippopotam.us</a><br>
+    Heat-stress effect on race pace: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8677617/" target="_blank" rel="noopener">Mantzios et al., 2022, Med Sci Sports Exerc</a><br>
+    Default adjustment scale adapted from <a href="https://runnersconnect.net/dew-point-effect-running/" target="_blank" rel="noopener">RunnersConnect</a><br>
+    A guide, not gospel — trust how you feel out there.
+  </footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  // ---- safe persistence (degrades silently where storage is blocked) ----
+  const store = {
+    get(k){ try { return localStorage.getItem(k); } catch { return null; } },
+    set(k,v){ try { localStorage.setItem(k,v); } catch {} },
+  };
+
+  // ---- theme (everforest dark / light) ----
+  const themeMeta = document.getElementById("theme-color-meta");
+  const themeToggle = document.getElementById("theme-toggle");
+  const themeIcon = themeToggle.querySelector(".theme-icon");
+  const THEME_COLORS = { dark:"#2D353B", light:"#FFFBEF" };
+
+  function applyTheme(theme){
+    document.documentElement.setAttribute("data-theme", theme);
+    themeMeta.setAttribute("content", THEME_COLORS[theme]);
+    themeIcon.textContent = theme === "dark" ? "☾" : "☀";
+    themeToggle.setAttribute("aria-pressed", String(theme === "light"));
+    themeToggle.setAttribute("aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+  }
+
+  let theme = store.get("dp_theme") || "dark";
+  applyTheme(theme);
+  themeToggle.addEventListener("click", () => {
+    theme = theme === "dark" ? "light" : "dark";
+    store.set("dp_theme", theme);
+    applyTheme(theme);
+  });
+
+  const DEFAULTS = {
+    f: [{t:55,p:0},{t:60,p:1},{t:65,p:2.5},{t:70,p:4},{t:75,p:6},{t:80,p:12}],
+    c: [{t:13,p:0},{t:16,p:1},{t:18,p:2.5},{t:21,p:4},{t:24,p:6},{t:27,p:12}],
+  };
+
+  // ---- state ----
+  const state = {
+    paceUnit: store.get("dp_paceUnit") || "mi",
+    tempUnit: store.get("dp_tempUnit") || "f",
+    scales: {
+      f: loadScale("f"),
+      c: loadScale("c"),
+    },
+  };
+
+  function loadScale(u){
+    const raw = store.get("dp_scale_" + u);
+    if (raw){
+      try {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length) return arr;
+      } catch {}
+    }
+    return DEFAULTS[u].map(r => ({...r}));
+  }
+  function saveScale(u){ store.set("dp_scale_" + u, JSON.stringify(state.scales[u])); }
+  const curScale = () => state.scales[state.tempUnit];
+
+  // ---- severity model ----
+  function severity(p){
+    if (p <= 0)   return {i:0, label:"Ideal",    color:"var(--s0)"};
+    if (p <= 1.5) return {i:1, label:"Mild",     color:"var(--s1)"};
+    if (p <= 3)   return {i:2, label:"Moderate", color:"var(--s2)"};
+    if (p <= 5)   return {i:3, label:"Hard",     color:"var(--s3)"};
+    return            {i:4, label:"Severe",   color:"var(--s4)"};
+  }
+
+  // ---- pace helpers ----
+  function parsePace(str){
+    const m = String(str).trim().match(/^(\d{1,2}):([0-5]\d)$/);
+    if (!m) return null;
+    return (+m[1]) * 60 + (+m[2]);
+  }
+  function fmtPace(sec){
+    sec = Math.round(sec);
+    return Math.floor(sec/60) + ":" + String(sec % 60).padStart(2,"0");
+  }
+
+  const NEAR_THRESHOLD = 2; // within this many degrees of the next level, round up
+
+  // pick band: highest threshold <= dew point; below lowest => 0%
+  // if dew is within NEAR_THRESHOLD of the next level up, round up to that level
+  function adjustmentFor(dew){
+    const rows = [...curScale()].sort((a,b)=>a.t-b.t);
+    let pct = 0, idx = -1;
+    rows.forEach((r,i) => { if (dew >= r.t){ pct = r.p; idx = i; } });
+    const next = rows[idx+1];
+    const bumped = !!next && (next.t - dew) <= NEAR_THRESHOLD;
+    if (bumped) pct = next.p;
+    return { pct, bumped };
+  }
+
+  // ---- DOM refs ----
+  const $ = sel => document.querySelector(sel);
+  const zipEl  = $("#zip");
+  const paceEl = $("#pace");
+  const goEl   = $("#go");
+  const resultEl = $("#result");
+  const scaleBody = $("#scale-body");
+
+  // restore inputs
+  zipEl.value  = store.get("dp_zip")  || "";
+  paceEl.value = store.get("dp_pace") || "";
+
+  // ---- toggles ----
+  document.querySelectorAll("[data-pace-unit]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.paceUnit = btn.dataset.paceUnit;
+      store.set("dp_paceUnit", state.paceUnit);
+      syncSeg("[data-pace-unit]", "data-pace-unit", state.paceUnit);
+    });
+  });
+  document.querySelectorAll("[data-temp-unit]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.tempUnit = btn.dataset.tempUnit;
+      store.set("dp_tempUnit", state.tempUnit);
+      syncSeg("[data-temp-unit]", "data-temp-unit", state.tempUnit);
+      renderScale();
+    });
+  });
+  function syncSeg(sel, attr, val){
+    document.querySelectorAll(sel).forEach(b =>
+      b.setAttribute("aria-pressed", b.getAttribute(attr) === val));
+  }
+  syncSeg("[data-pace-unit]", "data-pace-unit", state.paceUnit);
+  syncSeg("[data-temp-unit]", "data-temp-unit", state.tempUnit);
+
+  // ---- scale editor ----
+  function renderScale(){
+    const rows = curScale();
+    const unit = "°" + state.tempUnit.toUpperCase();
+    scaleBody.innerHTML = "";
+    rows.forEach((row, idx) => {
+      const tr = document.createElement("tr");
+      tr.className = "scale-row";
+      tr.innerHTML = `
+        <td><div class="cell">
+          <span class="swatch" style="background:${severity(row.p).color}"></span>
+          <input type="text" inputmode="decimal" value="${row.t}" data-field="t" data-idx="${idx}" aria-label="Dew point threshold ${idx+1}">
+          <span class="suffix">${unit}</span>
+        </div></td>
+        <td><div class="cell">
+          <input type="text" inputmode="decimal" value="${row.p}" data-field="p" data-idx="${idx}" aria-label="Slowdown percent ${idx+1}">
+          <span class="suffix">%</span>
+        </div></td>
+        <td><button class="del" data-del="${idx}" aria-label="Remove row ${idx+1}">×</button></td>`;
+      scaleBody.appendChild(tr);
+    });
+  }
+
+  scaleBody.addEventListener("input", e => {
+    const inp = e.target.closest("input"); if (!inp) return;
+    const idx = +inp.dataset.idx, field = inp.dataset.field;
+    const v = parseFloat(inp.value);
+    if (!Number.isNaN(v)) curScale()[idx][field] = v;
+    saveScale(state.tempUnit);
+    if (field === "p"){
+      const sw = inp.closest("tr").querySelector(".swatch");
+      if (sw) sw.style.background = severity(v).color;
+    }
+  });
+  scaleBody.addEventListener("click", e => {
+    const del = e.target.closest("[data-del]"); if (!del) return;
+    curScale().splice(+del.dataset.del, 1);
+    saveScale(state.tempUnit); renderScale();
+  });
+  $("#add-row").addEventListener("click", () => {
+    const rows = curScale();
+    const last = rows[rows.length-1];
+    rows.push({ t: last ? last.t + 5 : 60, p: last ? last.p + 1 : 0 });
+    saveScale(state.tempUnit); renderScale();
+  });
+  $("#reset-scale").addEventListener("click", () => {
+    state.scales[state.tempUnit] = DEFAULTS[state.tempUnit].map(r=>({...r}));
+    saveScale(state.tempUnit); renderScale();
+  });
+  renderScale();
+
+  // ---- fetch + compute ----
+  async function getLocation(zip){
+    let res;
+    try { res = await fetch(`https://api.zippopotam.us/us/${zip}`); }
+    catch { throw new Error("net"); }
+    if (res.status === 404) throw new Error("zip");
+    if (!res.ok) throw new Error("zipsvc");
+    const d = await res.json();
+    const p = d.places && d.places[0];
+    if (!p) throw new Error("zip");
+    return {
+      lat: p.latitude, lon: p.longitude,
+      name: `${p["place name"]}, ${p["state abbreviation"]}`,
+    };
+  }
+
+  async function getDewPoint(lat, lon, unit){
+    const tu = unit === "f" ? "fahrenheit" : "celsius";
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+      + `&current=dew_point_2m&hourly=dew_point_2m&temperature_unit=${tu}&timezone=auto&forecast_days=1`;
+    let res;
+    try { res = await fetch(url); }
+    catch { throw new Error("net"); }
+    if (!res.ok) throw new Error("weather");
+    const d = await res.json();
+    let dew = d.current && typeof d.current.dew_point_2m === "number" ? d.current.dew_point_2m : null;
+    if (dew === null && d.hourly && d.hourly.dew_point_2m){      // fallback: nearest hour
+      const series = d.hourly.dew_point_2m;
+      const hr = new Date().getHours();
+      dew = series[hr] ?? series.find(v => typeof v === "number");
+    }
+    if (typeof dew !== "number") throw new Error("weather");
+    return dew;
+  }
+
+  const ERRORS = {
+    pace: "Enter your pace as minutes:seconds, like 8:00.",
+    zipformat: "Enter a 5-digit US ZIP code.",
+    zip:  "No match for that ZIP. Check the digits?",
+    zipsvc: "The ZIP lookup hiccuped. Try again in a moment.",
+    weather: "Couldn't read the weather there. Try again in a moment.",
+    net:  "Network's not reachable. Check your connection and retry.",
+  };
+
+  function showError(key){
+    resultEl.innerHTML = `<div class="status" role="alert">${ERRORS[key] || ERRORS.weather}</div>`;
+  }
+
+  async function run(){
+    const zip = zipEl.value.trim();
+    const baseSec = parsePace(paceEl.value);
+
+    if (!/^\d{5}$/.test(zip)) return showError("zipformat");
+    if (baseSec === null)     return showError("pace");
+
+    store.set("dp_zip", zip);
+    store.set("dp_pace", paceEl.value.trim());
+
+    goEl.disabled = true;
+    const label = goEl.textContent;
+    goEl.textContent = "Checking…";
+    resultEl.innerHTML = "";
+
+    try {
+      const loc = await getLocation(zip);
+      const dew = await getDewPoint(loc.lat, loc.lon, state.tempUnit);
+      renderResult(loc, dew, baseSec);
+    } catch (err){
+      showError(err.message);
+    } finally {
+      goEl.disabled = false;
+      goEl.textContent = label;
+    }
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  function renderResult(loc, dew, baseSec){
+    const { pct, bumped } = adjustmentFor(dew);
+    const adj = baseSec * (1 + pct/100);
+    const delta = Math.round(adj - baseSec);
+    const sev = severity(pct);
+    const unit = "/ " + state.paceUnit;
+    const tempU = "°" + state.tempUnit.toUpperCase();
+    const dewTxt = (Math.round(dew*10)/10) + tempU;
+
+    // build dew-point track
+    const rows = [...curScale()].sort((a,b)=>a.t-b.t);
+    const step = rows.length > 1 ? (rows[rows.length-1].t - rows[0].t) / (rows.length-1) : 5;
+    const domMin = rows[0].t - step;
+    const domMax = rows[rows.length-1].t + step;
+    const span = domMax - domMin || 1;
+
+    // segments: [domMin..rows0)=0% ; then each row to next ; last to domMax
+    const segs = [];
+    segs.push({ from: domMin, to: rows[0].t, p: 0 });
+    for (let i=0;i<rows.length;i++){
+      const to = i < rows.length-1 ? rows[i+1].t : domMax;
+      segs.push({ from: rows[i].t, to, p: rows[i].p });
+    }
+    const segHTML = segs.map(s => {
+      const w = ((s.to - s.from)/span*100);
+      return `<div class="seg-fill" style="width:${w}%;background:${severity(s.p).color}"></div>`;
+    }).join("");
+    const needlePct = Math.min(100, Math.max(0, (dew - domMin)/span*100));
+
+    const deltaTxt = delta === 0
+      ? `No change needed`
+      : `+${delta}s ${unit} <span class="from">· from ${fmtPace(baseSec)}</span>`;
+
+    resultEl.innerHTML = `
+      <div class="result-card" style="--accent:${sev.color}">
+        <div class="accent-bar"></div>
+        <div class="result-body">
+          <p class="place">📍 <b>${escapeHtml(loc.name)}</b></p>
+          <div class="hero">
+            <span class="pace-big">${fmtPace(adj)}</span>
+            <span class="pace-unit">${unit}</span>
+          </div>
+          <p class="delta">${deltaTxt}</p>
+
+          <div class="band-tag"><span class="dot"></span>${sev.label} · ${pct}% slower</div>
+          ${bumped ? `<p class="note">↑ Within ${NEAR_THRESHOLD}° of the next level, so we rounded up to be safe.</p>` : ""}
+
+          <div class="track-wrap">
+            <div class="track">${segHTML}<span class="needle" style="left:${needlePct}%"></span></div>
+            <div class="track-labels"><span>${Math.round(domMin)}${tempU}</span><span>${Math.round(domMax)}${tempU}</span></div>
+          </div>
+
+          <p class="reading">Dew point now: <b>${dewTxt}</b></p>
+        </div>
+      </div>`;
+  }
+
+  goEl.addEventListener("click", run);
+  [zipEl, paceEl].forEach(el =>
+    el.addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
+})();
+</script>
+</body>
+</html>
