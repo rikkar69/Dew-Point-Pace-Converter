@@ -113,6 +113,29 @@
     outline:2px solid var(--pine-2);outline-offset:2px;
   }
 
+  .location-row{position:relative;display:flex;gap:8px;align-items:stretch}
+  .location-row input{flex:1;min-width:0}
+  .geo-btn{
+    flex:none;width:46px;border:1px solid var(--line);border-radius:10px;
+    background:var(--paper);color:var(--ink);cursor:pointer;
+    font-size:18px;line-height:1;transition:background .15s ease;
+  }
+  .geo-btn:hover{background:var(--paper-2)}
+  .geo-btn[disabled]{opacity:.5;cursor:default}
+
+  .suggestions{
+    position:absolute;top:calc(100% + 6px);left:0;right:0;z-index:20;
+    margin:0;padding:0;list-style:none;
+    background:var(--field);border:1px solid var(--line);border-radius:10px;
+    box-shadow:var(--shadow);max-height:240px;overflow-y:auto;
+  }
+  .suggestions li{
+    padding:11px 14px;font-size:14px;cursor:pointer;
+    border-bottom:1px solid var(--line);
+  }
+  .suggestions li:last-child{border-bottom:0}
+  .suggestions li:hover,.suggestions li.active{background:var(--paper-2)}
+
   .pace-line{display:flex;gap:10px;align-items:stretch}
 
   .pace-time{
@@ -289,8 +312,12 @@
 
   <div class="card">
     <div class="row">
-      <label for="zip">ZIP code</label>
-      <input id="zip" type="tel" inputmode="numeric" autocomplete="postal-code" maxlength="5" placeholder="68510">
+      <label for="city">Location</label>
+      <div class="location-row">
+        <input id="city" type="text" autocomplete="off" placeholder="Boulder, CO" aria-autocomplete="list" aria-expanded="false" role="combobox">
+        <button type="button" id="geo-btn" class="geo-btn" aria-label="Use my current location" title="Use my location">⌖</button>
+        <ul id="city-suggestions" class="suggestions" role="listbox" hidden></ul>
+      </div>
     </div>
 
     <div class="row">
@@ -339,8 +366,7 @@
   <div id="result" aria-live="polite"></div>
 
   <footer>
-    Weather from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
-    ZIP lookup from <a href="https://zippopotam.us" target="_blank" rel="noopener">Zippopotam.us</a><br>
+    Weather and location search from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a><br>
     Heat-stress effect on race pace: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8677617/" target="_blank" rel="noopener">Mantzios et al., 2022, Med Sci Sports Exerc</a><br>
     Default adjustment scale adapted from <a href="https://runnersconnect.net/dew-point-effect-running/" target="_blank" rel="noopener">RunnersConnect</a><br>
     A guide, not gospel — trust how you feel out there.
@@ -443,7 +469,9 @@
 
   // ---- DOM refs ----
   const $ = sel => document.querySelector(sel);
-  const zipEl     = $("#zip");
+  const cityEl    = $("#city");
+  const geoBtn    = $("#geo-btn");
+  const suggestEl = $("#city-suggestions");
   const paceMinEl = $("#pace-min");
   const paceSecEl = $("#pace-sec");
   const goEl   = $("#go");
@@ -451,9 +479,107 @@
   const scaleBody = $("#scale-body");
 
   // restore inputs
-  zipEl.value = store.get("dp_zip") || "";
   const savedPace = (store.get("dp_pace") || "").match(/^(\d{1,2}):([0-5]\d)$/);
   if (savedPace){ paceMinEl.value = savedPace[1]; paceSecEl.value = savedPace[2]; }
+
+  let selectedLoc = null;
+  try {
+    const savedLoc = JSON.parse(store.get("dp_loc") || "null");
+    if (savedLoc && savedLoc.name && typeof savedLoc.lat === "number" && typeof savedLoc.lon === "number"){
+      selectedLoc = savedLoc;
+      cityEl.value = savedLoc.name;
+    }
+  } catch {}
+
+  // ---- city search (Open-Meteo geocoding) ----
+  let searchTimer = null;
+  let searchAbort = null;
+
+  function hideSuggestions(){
+    suggestEl.hidden = true;
+    suggestEl.innerHTML = "";
+    suggestEl._items = null;
+    cityEl.setAttribute("aria-expanded", "false");
+  }
+
+  function labelFor(item){
+    return [item.name, item.admin1, item.country].filter(Boolean).join(", ");
+  }
+
+  function renderSuggestions(list){
+    if (!list.length){ hideSuggestions(); return; }
+    suggestEl._items = list;
+    suggestEl.innerHTML = list.map((item, i) =>
+      `<li role="option" data-idx="${i}">${escapeHtml(labelFor(item))}</li>`).join("");
+    suggestEl.hidden = false;
+    cityEl.setAttribute("aria-expanded", "true");
+  }
+
+  function selectLocation(loc){
+    selectedLoc = loc;
+    cityEl.value = loc.name;
+    store.set("dp_loc", JSON.stringify(loc));
+    hideSuggestions();
+  }
+
+  async function searchCity(q){
+    if (searchAbort) searchAbort.abort();
+    searchAbort = new AbortController();
+    try {
+      const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=6&language=en&format=json`;
+      const res = await fetch(url, { signal: searchAbort.signal });
+      if (!res.ok) return hideSuggestions();
+      const d = await res.json();
+      renderSuggestions(d.results || []);
+    } catch (err){
+      if (err.name !== "AbortError") hideSuggestions();
+    }
+  }
+
+  cityEl.addEventListener("input", () => {
+    selectedLoc = null;
+    const q = cityEl.value.trim();
+    clearTimeout(searchTimer);
+    if (q.length < 2){ hideSuggestions(); return; }
+    searchTimer = setTimeout(() => searchCity(q), 300);
+  });
+
+  suggestEl.addEventListener("click", e => {
+    const li = e.target.closest("li"); if (!li) return;
+    const item = suggestEl._items[+li.dataset.idx];
+    selectLocation({ lat: item.latitude, lon: item.longitude, name: labelFor(item) });
+  });
+
+  cityEl.addEventListener("keydown", e => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (suggestEl._items && suggestEl._items.length){
+      const item = suggestEl._items[0];
+      selectLocation({ lat: item.latitude, lon: item.longitude, name: labelFor(item) });
+    }
+    run();
+  });
+
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".location-row")) hideSuggestions();
+  });
+
+  // ---- use my location ----
+  geoBtn.addEventListener("click", () => {
+    if (!navigator.geolocation) return showError("geounsupported");
+    geoBtn.disabled = true;
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        geoBtn.disabled = false;
+        selectLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude, name: "Current location" });
+      },
+      err => {
+        geoBtn.disabled = false;
+        showError(err.code === 1 ? "geodenied" : "geofail");
+      },
+      { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+    );
+  });
 
   // digits only, auto-advance minutes -> seconds
   [paceMinEl, paceSecEl].forEach(el => {
@@ -541,21 +667,6 @@
   renderScale();
 
   // ---- fetch + compute ----
-  async function getLocation(zip){
-    let res;
-    try { res = await fetch(`https://api.zippopotam.us/us/${zip}`); }
-    catch { throw new Error("net"); }
-    if (res.status === 404) throw new Error("zip");
-    if (!res.ok) throw new Error("zipsvc");
-    const d = await res.json();
-    const p = d.places && d.places[0];
-    if (!p) throw new Error("zip");
-    return {
-      lat: p.latitude, lon: p.longitude,
-      name: `${p["place name"]}, ${p["state abbreviation"]}`,
-    };
-  }
-
   async function getDewPoint(lat, lon, unit){
     const tu = unit === "f" ? "fahrenheit" : "celsius";
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
@@ -577,9 +688,10 @@
 
   const ERRORS = {
     pace: "Enter your pace as minutes:seconds, like 8:00.",
-    zipformat: "Enter a 5-digit US ZIP code.",
-    zip:  "No match for that ZIP. Check the digits?",
-    zipsvc: "The ZIP lookup hiccuped. Try again in a moment.",
+    location: "Pick a city from the list, or use your location.",
+    geodenied: "Location access was denied. Pick a city instead.",
+    geofail: "Couldn't get your location. Try again or pick a city.",
+    geounsupported: "Your browser doesn't support geolocation. Pick a city instead.",
     weather: "Couldn't read the weather there. Try again in a moment.",
     net:  "Network's not reachable. Check your connection and retry.",
   };
@@ -589,13 +701,11 @@
   }
 
   async function run(){
-    const zip = zipEl.value.trim();
     const baseSec = parsePace(paceStr());
 
-    if (!/^\d{5}$/.test(zip)) return showError("zipformat");
-    if (baseSec === null)     return showError("pace");
+    if (!selectedLoc)     return showError("location");
+    if (baseSec === null) return showError("pace");
 
-    store.set("dp_zip", zip);
     store.set("dp_pace", paceStr());
 
     goEl.disabled = true;
@@ -604,9 +714,8 @@
     resultEl.innerHTML = "";
 
     try {
-      const loc = await getLocation(zip);
-      const dew = await getDewPoint(loc.lat, loc.lon, state.tempUnit);
-      renderResult(loc, dew, baseSec);
+      const dew = await getDewPoint(selectedLoc.lat, selectedLoc.lon, state.tempUnit);
+      renderResult(selectedLoc, dew, baseSec);
     } catch (err){
       showError(err.message);
     } finally {
@@ -679,7 +788,7 @@
   }
 
   goEl.addEventListener("click", run);
-  [zipEl, paceMinEl, paceSecEl].forEach(el =>
+  [paceMinEl, paceSecEl].forEach(el =>
     el.addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
 })();
 </script>
