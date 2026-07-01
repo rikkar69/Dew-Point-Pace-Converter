@@ -114,7 +114,21 @@
   }
 
   .pace-line{display:flex;gap:10px;align-items:stretch}
-  .pace-line input{flex:1}
+
+  .pace-time{
+    flex:1;display:flex;align-items:center;gap:4px;
+    border:1px solid var(--line);border-radius:10px;background:var(--paper);
+    padding:0 4px;
+  }
+  .pace-time input{
+    flex:1;min-width:0;border:0;background:transparent;
+    padding:13px 6px;text-align:center;
+  }
+  .pace-time input:first-child{text-align:right}
+  .pace-time input:last-child{text-align:left}
+  .pace-time input:focus-visible{outline:none}
+  .pace-time:focus-within{outline:2px solid var(--pine-2);outline-offset:2px}
+  .pace-time .colon{font-family:"DM Mono",monospace;font-size:18px;color:var(--ink-soft)}
 
   /* segmented toggle */
   .seg{display:inline-flex;background:var(--paper-2);border-radius:10px;padding:3px;gap:2px}
@@ -280,9 +294,13 @@
     </div>
 
     <div class="row">
-      <label for="pace">Target pace</label>
+      <label for="pace-min">Target pace</label>
       <div class="pace-line">
-        <input id="pace" type="text" inputmode="numeric" placeholder="8:00">
+        <div class="pace-time">
+          <input id="pace-min" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="8" aria-label="Pace minutes">
+          <span class="colon" aria-hidden="true">:</span>
+          <input id="pace-sec" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="00" aria-label="Pace seconds">
+        </div>
         <div class="seg" role="group" aria-label="Pace unit">
           <button type="button" data-pace-unit="mi" aria-pressed="true">/ mi</button>
           <button type="button" data-pace-unit="km" aria-pressed="false">/ km</button>
@@ -425,15 +443,28 @@
 
   // ---- DOM refs ----
   const $ = sel => document.querySelector(sel);
-  const zipEl  = $("#zip");
-  const paceEl = $("#pace");
+  const zipEl     = $("#zip");
+  const paceMinEl = $("#pace-min");
+  const paceSecEl = $("#pace-sec");
   const goEl   = $("#go");
   const resultEl = $("#result");
   const scaleBody = $("#scale-body");
 
   // restore inputs
-  zipEl.value  = store.get("dp_zip")  || "";
-  paceEl.value = store.get("dp_pace") || "";
+  zipEl.value = store.get("dp_zip") || "";
+  const savedPace = (store.get("dp_pace") || "").match(/^(\d{1,2}):([0-5]\d)$/);
+  if (savedPace){ paceMinEl.value = savedPace[1]; paceSecEl.value = savedPace[2]; }
+
+  // digits only, auto-advance minutes -> seconds
+  [paceMinEl, paceSecEl].forEach(el => {
+    el.addEventListener("input", () => {
+      el.value = el.value.replace(/\D/g, "").slice(0, 2);
+    });
+  });
+  paceMinEl.addEventListener("input", () => {
+    if (paceMinEl.value.length === 2) paceSecEl.focus();
+  });
+  const paceStr = () => `${paceMinEl.value}:${paceSecEl.value.padStart(2, "0")}`;
 
   // ---- toggles ----
   document.querySelectorAll("[data-pace-unit]").forEach(btn => {
@@ -559,13 +590,13 @@
 
   async function run(){
     const zip = zipEl.value.trim();
-    const baseSec = parsePace(paceEl.value);
+    const baseSec = parsePace(paceStr());
 
     if (!/^\d{5}$/.test(zip)) return showError("zipformat");
     if (baseSec === null)     return showError("pace");
 
     store.set("dp_zip", zip);
-    store.set("dp_pace", paceEl.value.trim());
+    store.set("dp_pace", paceStr());
 
     goEl.disabled = true;
     const label = goEl.textContent;
@@ -648,7 +679,7 @@
   }
 
   goEl.addEventListener("click", run);
-  [zipEl, paceEl].forEach(el =>
+  [zipEl, paceMinEl, paceSecEl].forEach(el =>
     el.addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
 })();
 </script>
