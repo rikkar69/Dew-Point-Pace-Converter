@@ -103,15 +103,28 @@
   .row{margin-bottom:16px}
   .row:last-child{margin-bottom:0}
 
-  input[type=text],input[type=tel]{
+  input[type=text],input[type=tel],input[type=date]{
     width:100%;font-family:"DM Mono",monospace;font-size:18px;
     padding:13px 14px;border:1px solid var(--line);border-radius:10px;
     background:var(--paper);color:var(--ink);
+    color-scheme:light dark;
   }
   input::placeholder{color:var(--ink-soft);opacity:.6}
   input:focus-visible,button:focus-visible,.seg button:focus-visible{
     outline:2px solid var(--pine-2);outline-offset:2px;
   }
+
+  .field-hint{font-size:12px;color:var(--ink-soft);margin:6px 0 0}
+
+  /* ---- tabs ---- */
+  .tabs{display:flex;gap:8px;margin-bottom:12px}
+  .tab{
+    flex:1;border:1px solid var(--line);background:var(--field);cursor:pointer;
+    font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;color:var(--ink-soft);
+    padding:10px;border-radius:10px;transition:background .15s ease,color .15s ease;
+  }
+  .tab[aria-selected=true]{background:var(--pine);color:var(--paper);border-color:transparent}
+  .tab-panel[hidden]{display:none}
 
   .location-row{position:relative;display:flex;gap:8px;align-items:stretch}
   .location-row input{flex:1;min-width:0}
@@ -136,10 +149,8 @@
   .suggestions li:last-child{border-bottom:0}
   .suggestions li:hover,.suggestions li.active{background:var(--paper-2)}
 
-  .pace-line{display:flex;gap:10px;align-items:stretch}
-
   .pace-time{
-    flex:1;display:flex;align-items:center;gap:4px;
+    width:100%;display:flex;align-items:center;gap:4px;
     border:1px solid var(--line);border-radius:10px;background:var(--paper);
     padding:0 4px;
   }
@@ -310,6 +321,11 @@
     <p class="sub">High dew point means your sweat won't evaporate, so the same effort costs you speed. Plug in today's conditions and get the pace your body will actually hold.</p>
   </header>
 
+  <div class="tabs" role="tablist" aria-label="Mode">
+    <button type="button" class="tab" data-tab="live" role="tab" aria-selected="true">Live conditions</button>
+    <button type="button" class="tab" data-tab="hist" role="tab" aria-selected="false">Past race day</button>
+  </div>
+
   <div class="card">
     <div class="row">
       <label for="city">Location</label>
@@ -320,18 +336,48 @@
       </div>
     </div>
 
-    <div class="row">
-      <label for="pace-min">Target pace</label>
-      <div class="pace-line">
+    <div id="panel-live" class="tab-panel">
+      <div class="row">
+        <label for="pace-min">Target pace</label>
         <div class="pace-time">
           <input id="pace-min" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="8" aria-label="Pace minutes">
           <span class="colon" aria-hidden="true">:</span>
           <input id="pace-sec" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="00" aria-label="Pace seconds">
         </div>
-        <div class="seg" role="group" aria-label="Pace unit">
-          <button type="button" data-pace-unit="mi" aria-pressed="true">/ mi</button>
-          <button type="button" data-pace-unit="km" aria-pressed="false">/ km</button>
+      </div>
+    </div>
+
+    <div id="panel-hist" class="tab-panel" hidden>
+      <div class="row">
+        <label for="hist-date">Race date</label>
+        <input id="hist-date" type="date">
+        <p class="field-hint">Recent-day data can lag ~5 days behind.</p>
+      </div>
+
+      <div class="row inline">
+        <label style="margin:0">Approx. time of day</label>
+        <div class="seg" role="group" aria-label="Time of day">
+          <button type="button" data-hist-time="7" aria-pressed="true">Morning</button>
+          <button type="button" data-hist-time="12" aria-pressed="false">Midday</button>
+          <button type="button" data-hist-time="18" aria-pressed="false">Evening</button>
         </div>
+      </div>
+
+      <div class="row">
+        <label for="hist-pace-min">Actual pace that day</label>
+        <div class="pace-time">
+          <input id="hist-pace-min" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="8" aria-label="Actual pace minutes">
+          <span class="colon" aria-hidden="true">:</span>
+          <input id="hist-pace-sec" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="00" aria-label="Actual pace seconds">
+        </div>
+      </div>
+    </div>
+
+    <div class="row inline">
+      <label style="margin:0">Pace unit</label>
+      <div class="seg" role="group" aria-label="Pace unit">
+        <button type="button" data-pace-unit="mi" aria-pressed="true">/ mi</button>
+        <button type="button" data-pace-unit="km" aria-pressed="false">/ km</button>
       </div>
     </div>
 
@@ -366,7 +412,7 @@
   <div id="result" aria-live="polite"></div>
 
   <footer>
-    Weather and location search from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
+    Weather, historical data, and location search from <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a> ·
     current-location lookup © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors<br>
     Heat-stress effect on race pace: <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8677617/" target="_blank" rel="noopener">Mantzios et al., 2022, Med Sci Sports Exerc</a><br>
     Default adjustment scale adapted from <a href="https://runnersconnect.net/dew-point-effect-running/" target="_blank" rel="noopener">RunnersConnect</a><br>
@@ -478,10 +524,46 @@
   const goEl   = $("#go");
   const resultEl = $("#result");
   const scaleBody = $("#scale-body");
+  const tabBtns    = document.querySelectorAll(".tab");
+  const panelLive  = $("#panel-live");
+  const panelHist  = $("#panel-hist");
+  const histDateEl = $("#hist-date");
+  const histPaceMinEl = $("#hist-pace-min");
+  const histPaceSecEl = $("#hist-pace-sec");
 
   // restore inputs
   const savedPace = (store.get("dp_pace") || "").match(/^(\d{1,2}):([0-5]\d)$/);
   if (savedPace){ paceMinEl.value = savedPace[1]; paceSecEl.value = savedPace[2]; }
+
+  const savedHistPace = (store.get("dp_histPace") || "").match(/^(\d{1,2}):([0-5]\d)$/);
+  if (savedHistPace){ histPaceMinEl.value = savedHistPace[1]; histPaceSecEl.value = savedHistPace[2]; }
+  histDateEl.value = store.get("dp_histDate") || "";
+  const histMaxDate = new Date();
+  histMaxDate.setDate(histMaxDate.getDate() - 5);
+  histDateEl.max = histMaxDate.toISOString().slice(0, 10);
+
+  // ---- tabs ----
+  let activeTab = "live";
+  let histHour = 7;
+  const GO_LABELS = { live: "Check conditions", hist: "Convert to ideal pace" };
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeTab = btn.dataset.tab;
+      tabBtns.forEach(b => b.setAttribute("aria-selected", String(b === btn)));
+      panelLive.hidden = activeTab !== "live";
+      panelHist.hidden = activeTab !== "hist";
+      goEl.textContent = GO_LABELS[activeTab];
+      resultEl.innerHTML = "";
+    });
+  });
+
+  document.querySelectorAll("[data-hist-time]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      histHour = +btn.dataset.histTime;
+      syncSeg("[data-hist-time]", "data-hist-time", String(histHour));
+    });
+  });
 
   let selectedLoc = null;
   try {
@@ -603,7 +685,7 @@
   });
 
   // digits only, auto-advance minutes -> seconds
-  [paceMinEl, paceSecEl].forEach(el => {
+  [paceMinEl, paceSecEl, histPaceMinEl, histPaceSecEl].forEach(el => {
     el.addEventListener("input", () => {
       el.value = el.value.replace(/\D/g, "").slice(0, 2);
     });
@@ -611,7 +693,11 @@
   paceMinEl.addEventListener("input", () => {
     if (paceMinEl.value.length === 2) paceSecEl.focus();
   });
+  histPaceMinEl.addEventListener("input", () => {
+    if (histPaceMinEl.value.length === 2) histPaceSecEl.focus();
+  });
   const paceStr = () => `${paceMinEl.value}:${paceSecEl.value.padStart(2, "0")}`;
+  const histPaceStr = () => `${histPaceMinEl.value}:${histPaceSecEl.value.padStart(2, "0")}`;
 
   // ---- toggles ----
   document.querySelectorAll("[data-pace-unit]").forEach(btn => {
@@ -720,12 +806,34 @@
     return band ? band.add : 0;
   }
 
+  async function getHistoricalConditions(lat, lon, date, hour, unit){
+    const tu = unit === "f" ? "fahrenheit" : "celsius";
+    const url = `https://archive-api.open-meteo.com/v1/archive?latitude=${lat}&longitude=${lon}`
+      + `&start_date=${date}&end_date=${date}&hourly=dew_point_2m,temperature_2m&temperature_unit=${tu}&timezone=auto`;
+    let res;
+    try { res = await fetch(url); }
+    catch { throw new Error("net"); }
+    if (!res.ok) throw new Error("weather");
+    const d = await res.json();
+    const times = d.hourly && d.hourly.time;
+    if (!times || !times.length) throw new Error("weather");
+    const target = String(hour).padStart(2, "0") + ":00";
+    let idx = times.findIndex(t => t.slice(11, 16) === target);
+    if (idx === -1) idx = Math.floor(times.length / 2);
+    const dew = d.hourly.dew_point_2m[idx];
+    const temp = d.hourly.temperature_2m[idx];
+    if (typeof dew !== "number" || typeof temp !== "number") throw new Error("weather");
+    return { dew, temp };
+  }
+
   const ERRORS = {
     pace: "Enter your pace as minutes:seconds, like 8:00.",
     location: "Pick a city from the list, or use your location.",
     geodenied: "Location access was denied. Pick a city instead.",
     geofail: "Couldn't get your location. Try again or pick a city.",
     geounsupported: "Your browser doesn't support geolocation. Pick a city instead.",
+    date: "Pick the date you ran that race.",
+    futuredate: "Historical data has about a 5-day lag — pick an earlier date.",
     weather: "Couldn't read the weather there. Try again in a moment.",
     net:  "Network's not reachable. Check your connection and retry.",
   };
@@ -734,7 +842,117 @@
     resultEl.innerHTML = `<div class="status" role="alert">${ERRORS[key] || ERRORS.weather}</div>`;
   }
 
-  async function run(){
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  // shared dew-point track markup, used by both live and historical results
+  function buildTrack(dew){
+    const rows = [...curScale()].sort((a,b)=>a.t-b.t);
+    const step = rows.length > 1 ? (rows[rows.length-1].t - rows[0].t) / (rows.length-1) : 5;
+    const domMin = rows[0].t - step;
+    const domMax = rows[rows.length-1].t + step;
+    const span = domMax - domMin || 1;
+
+    // segments: [domMin..rows0)=0% ; then each row to next ; last to domMax
+    const segs = [];
+    segs.push({ from: domMin, to: rows[0].t, p: 0 });
+    for (let i=0;i<rows.length;i++){
+      const to = i < rows.length-1 ? rows[i+1].t : domMax;
+      segs.push({ from: rows[i].t, to, p: rows[i].p });
+    }
+    const segHTML = segs.map(s => {
+      const w = ((s.to - s.from)/span*100);
+      return `<div class="seg-fill" style="width:${w}%;background:${severity(s.p).color}"></div>`;
+    }).join("");
+    const needlePct = Math.min(100, Math.max(0, (dew - domMin)/span*100));
+    return `
+      <div class="track-wrap">
+        <div class="track">${segHTML}<span class="needle" style="left:${needlePct}%"></span></div>
+        <div class="track-labels"><span>${Math.round(domMin)}${"°" + state.tempUnit.toUpperCase()}</span><span>${Math.round(domMax)}${"°" + state.tempUnit.toUpperCase()}</span></div>
+      </div>`;
+  }
+
+  function renderResult(loc, dew, temp, baseSec){
+    const { pct: dewPct, bumped } = adjustmentFor(dew);
+    const heatAdd = heatAdjustmentFor(temp, state.tempUnit);
+    const pct = dewPct + heatAdd;
+    const adj = baseSec * (1 + pct/100);
+    const delta = Math.round(adj - baseSec);
+    const sev = severity(pct);
+    const unit = "/ " + state.paceUnit;
+    const tempU = "°" + state.tempUnit.toUpperCase();
+    const dewTxt = (Math.round(dew*10)/10) + tempU;
+    const tempTxt = (Math.round(temp*10)/10) + tempU;
+
+    const deltaTxt = delta === 0
+      ? `No change needed`
+      : `+${delta}s ${unit} <span class="from">· from ${fmtPace(baseSec)}</span>`;
+
+    resultEl.innerHTML = `
+      <div class="result-card" style="--accent:${sev.color}">
+        <div class="accent-bar"></div>
+        <div class="result-body">
+          <p class="place">📍 <b>${escapeHtml(loc.name)}</b></p>
+          <div class="hero">
+            <span class="pace-big">${fmtPace(adj)}</span>
+            <span class="pace-unit">${unit}</span>
+          </div>
+          <p class="delta">${deltaTxt}</p>
+
+          <div class="band-tag"><span class="dot"></span>${sev.label} · ${pct}% slower</div>
+          ${bumped ? `<p class="note">↑ Within ${NEAR_THRESHOLD}° of the next level, so we rounded up to be safe.</p>` : ""}
+          ${heatAdd ? `<p class="note">🌡 +${heatAdd}% added for air temp (${tempTxt}).</p>` : ""}
+
+          ${buildTrack(dew)}
+
+          <p class="reading">Dew point now: <b>${dewTxt}</b> · Air temp: <b>${tempTxt}</b></p>
+        </div>
+      </div>`;
+  }
+
+  function renderHistResult(loc, dew, temp, actualSec, dateStr){
+    const { pct: dewPct, bumped } = adjustmentFor(dew);
+    const heatAdd = heatAdjustmentFor(temp, state.tempUnit);
+    const pct = dewPct + heatAdd;
+    const ideal = actualSec / (1 + pct/100);
+    const delta = Math.round(actualSec - ideal);
+    const sev = severity(pct);
+    const unit = "/ " + state.paceUnit;
+    const tempU = "°" + state.tempUnit.toUpperCase();
+    const dewTxt = (Math.round(dew*10)/10) + tempU;
+    const tempTxt = (Math.round(temp*10)/10) + tempU;
+    const dateTxt = new Date(dateStr + "T00:00:00").toLocaleDateString(undefined, { year:"numeric", month:"short", day:"numeric" });
+
+    const deltaTxt = delta === 0
+      ? `No change — conditions were already ideal`
+      : `${delta}s ${unit} faster <span class="from">· from ${fmtPace(actualSec)} actual</span>`;
+
+    resultEl.innerHTML = `
+      <div class="result-card" style="--accent:${sev.color}">
+        <div class="accent-bar"></div>
+        <div class="result-body">
+          <p class="place">📍 <b>${escapeHtml(loc.name)}</b> · ${escapeHtml(dateTxt)}</p>
+          <div class="hero">
+            <span class="pace-big">${fmtPace(ideal)}</span>
+            <span class="pace-unit">${unit}</span>
+          </div>
+          <p class="delta">${deltaTxt}</p>
+
+          <div class="band-tag"><span class="dot"></span>${sev.label} that day · ${pct}% slower than ideal</div>
+          ${bumped ? `<p class="note">↑ Within ${NEAR_THRESHOLD}° of the next level, so we rounded up to be safe.</p>` : ""}
+          ${heatAdd ? `<p class="note">🌡 +${heatAdd}% added for air temp (${tempTxt}).</p>` : ""}
+
+          ${buildTrack(dew)}
+
+          <p class="reading">Dew point that day: <b>${dewTxt}</b> · Air temp: <b>${tempTxt}</b></p>
+        </div>
+      </div>`;
+  }
+
+  async function runLive(){
     const baseSec = parsePace(paceStr());
 
     if (!selectedLoc)     return showError("location");
@@ -758,75 +976,40 @@
     }
   }
 
-  function escapeHtml(str){
-    return String(str).replace(/[&<>"']/g, c => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-    }[c]));
+  async function runHistorical(){
+    const actualSec = parsePace(histPaceStr());
+    const date = histDateEl.value;
+
+    if (!selectedLoc)      return showError("location");
+    if (!date)              return showError("date");
+    if (date > histDateEl.max) return showError("futuredate");
+    if (actualSec === null) return showError("pace");
+
+    store.set("dp_histDate", date);
+    store.set("dp_histPace", histPaceStr());
+
+    goEl.disabled = true;
+    const label = goEl.textContent;
+    goEl.textContent = "Looking up…";
+    resultEl.innerHTML = "";
+
+    try {
+      const { dew, temp } = await getHistoricalConditions(selectedLoc.lat, selectedLoc.lon, date, histHour, state.tempUnit);
+      renderHistResult(selectedLoc, dew, temp, actualSec, date);
+    } catch (err){
+      showError(err.message);
+    } finally {
+      goEl.disabled = false;
+      goEl.textContent = label;
+    }
   }
 
-  function renderResult(loc, dew, temp, baseSec){
-    const { pct: dewPct, bumped } = adjustmentFor(dew);
-    const heatAdd = heatAdjustmentFor(temp, state.tempUnit);
-    const pct = dewPct + heatAdd;
-    const adj = baseSec * (1 + pct/100);
-    const delta = Math.round(adj - baseSec);
-    const sev = severity(pct);
-    const unit = "/ " + state.paceUnit;
-    const tempU = "°" + state.tempUnit.toUpperCase();
-    const dewTxt = (Math.round(dew*10)/10) + tempU;
-    const tempTxt = (Math.round(temp*10)/10) + tempU;
-
-    // build dew-point track
-    const rows = [...curScale()].sort((a,b)=>a.t-b.t);
-    const step = rows.length > 1 ? (rows[rows.length-1].t - rows[0].t) / (rows.length-1) : 5;
-    const domMin = rows[0].t - step;
-    const domMax = rows[rows.length-1].t + step;
-    const span = domMax - domMin || 1;
-
-    // segments: [domMin..rows0)=0% ; then each row to next ; last to domMax
-    const segs = [];
-    segs.push({ from: domMin, to: rows[0].t, p: 0 });
-    for (let i=0;i<rows.length;i++){
-      const to = i < rows.length-1 ? rows[i+1].t : domMax;
-      segs.push({ from: rows[i].t, to, p: rows[i].p });
-    }
-    const segHTML = segs.map(s => {
-      const w = ((s.to - s.from)/span*100);
-      return `<div class="seg-fill" style="width:${w}%;background:${severity(s.p).color}"></div>`;
-    }).join("");
-    const needlePct = Math.min(100, Math.max(0, (dew - domMin)/span*100));
-
-    const deltaTxt = delta === 0
-      ? `No change needed`
-      : `+${delta}s ${unit} <span class="from">· from ${fmtPace(baseSec)}</span>`;
-
-    resultEl.innerHTML = `
-      <div class="result-card" style="--accent:${sev.color}">
-        <div class="accent-bar"></div>
-        <div class="result-body">
-          <p class="place">📍 <b>${escapeHtml(loc.name)}</b></p>
-          <div class="hero">
-            <span class="pace-big">${fmtPace(adj)}</span>
-            <span class="pace-unit">${unit}</span>
-          </div>
-          <p class="delta">${deltaTxt}</p>
-
-          <div class="band-tag"><span class="dot"></span>${sev.label} · ${pct}% slower</div>
-          ${bumped ? `<p class="note">↑ Within ${NEAR_THRESHOLD}° of the next level, so we rounded up to be safe.</p>` : ""}
-          ${heatAdd ? `<p class="note">🌡 +${heatAdd}% added for air temp (${tempTxt}).</p>` : ""}
-
-          <div class="track-wrap">
-            <div class="track">${segHTML}<span class="needle" style="left:${needlePct}%"></span></div>
-            <div class="track-labels"><span>${Math.round(domMin)}${tempU}</span><span>${Math.round(domMax)}${tempU}</span></div>
-          </div>
-
-          <p class="reading">Dew point now: <b>${dewTxt}</b> · Air temp: <b>${tempTxt}</b></p>
-        </div>
-      </div>`;
+  async function run(){
+    return activeTab === "hist" ? runHistorical() : runLive();
   }
 
   goEl.addEventListener("click", run);
-  [paceMinEl, paceSecEl].forEach(el =>
+  [paceMinEl, paceSecEl, histPaceMinEl, histPaceSecEl, histDateEl].forEach(el =>
     el.addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
 })();
 </script>
