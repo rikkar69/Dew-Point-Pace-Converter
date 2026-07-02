@@ -200,7 +200,7 @@
       </button>
     </div>
     <h1>Sub-T Pace Converter</h1>
-    <p class="sub">Enter a recent 5K time and get your estimated 3, 6, and 10-minute subthreshold rep paces.</p>
+    <p class="sub">Enter a recent 5K time and get your estimated easy pace and 3, 6, and 10-minute subthreshold rep paces.</p>
   </header>
 
   <div class="card">
@@ -315,14 +315,16 @@
 
   const MI_TO_KM = 1.60934;
   function buildRows(T, unit){
+    const easy     = 0.458979 * T + 2.344;
     const threeMin = 0.321496 * T + 22.44;
     const sixMin   = 0.328865 * T + 24.18;
     const tenMin   = 0.338341 * T + 25.98;
     const conv = s => unit === "mi" ? s : s / MI_TO_KM;
     return [
-      { label: "3 min reps",  pace: fmtPace(conv(threeMin)) },
-      { label: "6 min reps",  pace: fmtPace(conv(sixMin)) },
-      { label: "10 min reps", pace: fmtPace(conv(tenMin)) },
+      { label: "Easy pace",    pace: fmtPace(conv(easy)) },
+      { label: "3 min reps",   pace: fmtPace(conv(threeMin)) },
+      { label: "6 min reps",   pace: fmtPace(conv(sixMin)) },
+      { label: "10 min reps",  pace: fmtPace(conv(tenMin)) },
     ];
   }
 
