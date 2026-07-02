@@ -177,6 +177,7 @@
   const TOOLS = [
     { title: "Dew Point Pace Converter", desc: "Live or historical humidity conditions, converted into the pace your body will actually hold.", href: "dew-point.html", icon: "💧", status: "Live" },
     { title: "Sub-T Pace Converter", desc: "Turn a recent 5K time into 3, 6, and 10-minute subthreshold rep paces.", href: "sub-t.html", icon: "📈", status: "Live" },
+    { title: "Marathon Plan Builder", desc: "A full 15-week, time-based build with per-session paces — drag to reorder a week's cards.", href: "marathon-builder.html", icon: "📅", status: "Beta" },
   ];
 
   function escapeHtml(str){
@@ -186,15 +187,15 @@
   }
 
   const grid = document.getElementById("tool-grid");
-  grid.innerHTML = TOOLS.map(t => `
+  grid.innerHTML = TOOLS.map(t => { const c = t.status === "Live" ? "var(--s0)" : "var(--s2)"; return `
     <a href="${escapeHtml(t.href)}" class="tool-card">
       <div class="tool-top">
         <span class="tool-icon">${t.icon}</span>
-        <span class="tool-status" style="color:var(--s0)"><span class="dot" style="background:var(--s0)"></span>${escapeHtml(t.status)}</span>
+        <span class="tool-status" style="color:${c}"><span class="dot" style="background:${c}"></span>${escapeHtml(t.status)}</span>
       </div>
       <h2 class="tool-title">${escapeHtml(t.title)}</h2>
       <p class="tool-desc">${escapeHtml(t.desc)}</p>
-    </a>`).join("");
+    </a>`; }).join("");
 })();
 </script>
 <script data-goatcounter="https://rikkar69.goatcounter.com/count"

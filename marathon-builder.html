@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2D353B" id="theme-color-meta">
+<title>Marathon Plan Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root,
+  [data-theme="dark"]{
+    --paper:#2D353B;
+    --paper-2:#343F44;
+    --ink:#D3C6AA;
+    --ink-soft:#9DA9A0;
+    --line:#475258;
+    --pine:#A7C080;
+    --pine-2:#83C092;
+    --field:#343F44;
+    --s0:#A7C080;
+    --s1:#83C092;
+    --s2:#DBBC7F;
+    --s3:#E69875;
+    --s4:#E67E80;
+
+    --radius:14px;
+    --shadow:0 1px 2px rgba(0,0,0,.18), 0 8px 24px rgba(0,0,0,.22);
+  }
+
+  [data-theme="light"]{
+    --paper:#FFFBEF;
+    --paper-2:#F2EFDB;
+    --ink:#5C6A72;
+    --ink-soft:#829181;
+    --line:#E8E5CF;
+    --pine:#8DA101;
+    --pine-2:#35A77C;
+    --field:#FFFFFF;
+    --s0:#8DA101;
+    --s1:#35A77C;
+    --s2:#DFA000;
+    --s3:#F57D26;
+    --s4:#F85552;
+
+    --shadow:0 1px 2px rgba(92,106,114,.06), 0 8px 24px rgba(92,106,114,.08);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"DM Sans",system-ui,sans-serif;
+    font-size:16px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+    padding:max(20px,env(safe-area-inset-top)) 18px 56px;
+    display:flex;
+    justify-content:center;
+    transition:background .15s ease, color .15s ease;
+  }
+  .wrap{width:100%;max-width:440px}
+  @media (min-width:700px){
+    .wrap{max-width:900px}
+  }
+
+  /* ---- header ---- */
+  header{margin:6px 0 22px}
+  .hub-back{
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:"DM Mono",monospace;font-size:12px;letter-spacing:.06em;
+    color:var(--ink-soft);text-decoration:none;margin:0 0 16px;
+  }
+  .hub-back:hover{color:var(--pine-2)}
+  .header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .eyebrow{
+    font-family:"DM Mono",monospace;
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--pine-2);margin:0 0 6px;
+  }
+  .theme-toggle{
+    flex:none;width:34px;height:34px;border-radius:9px;
+    border:1px solid var(--line);background:var(--field);color:var(--ink);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font-size:15px;line-height:1;transition:background .15s ease;
+  }
+  .theme-toggle:hover{background:var(--paper-2)}
+  h1{
+    font-family:"Fraunces",serif;
+    font-weight:500;font-size:34px;line-height:1.04;
+    letter-spacing:-.01em;margin:0;
+    font-variation-settings:"opsz" 60;
+  }
+  .sub{color:var(--ink-soft);font-size:14px;margin:8px 0 0;max-width:52ch}
+
+  /* ---- card ---- */
+  .card{
+    background:var(--field);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:18px;
+    margin-bottom:16px;
+  }
+  @media (min-width:700px){
+    .card{max-width:440px}
+  }
+
+  label{display:block;font-size:13px;font-weight:500;color:var(--ink-soft);margin:0 0 6px}
+  .row{margin-bottom:16px}
+  .row:last-child{margin-bottom:0}
+
+  .pace-time{
+    width:100%;display:flex;align-items:center;gap:4px;
+    border:1px solid var(--line);border-radius:10px;background:var(--paper);
+    padding:0 4px;
+  }
+  .pace-time input{
+    flex:1;min-width:0;border:0;background:transparent;
+    padding:13px 6px;text-align:center;
+    font-family:"DM Mono",monospace;font-size:18px;color:var(--ink);
+  }
+  .pace-time input::placeholder{color:var(--ink-soft);opacity:.6}
+  .pace-time input:first-child{text-align:right}
+  .pace-time input:last-child{text-align:left}
+  .pace-time input:focus-visible{outline:none}
+  .pace-time:focus-within{outline:2px solid var(--pine-2);outline-offset:2px}
+  .pace-time .colon{font-family:"DM Mono",monospace;font-size:18px;color:var(--ink-soft)}
+
+  .seg{display:inline-flex;background:var(--paper-2);border-radius:10px;padding:3px;gap:2px}
+  .seg button{
+    border:0;background:transparent;cursor:pointer;
+    font-family:"DM Sans",sans-serif;font-size:14px;font-weight:500;color:var(--ink-soft);
+    padding:9px 13px;border-radius:8px;line-height:1;white-space:nowrap;
+  }
+  .seg button[aria-pressed=true]{background:var(--field);color:var(--ink);box-shadow:0 1px 2px rgba(21,33,27,.12)}
+
+  .inline{display:flex;justify-content:space-between;align-items:center;gap:12px}
+
+  .go{
+    width:100%;border:0;cursor:pointer;
+    background:var(--pine);color:var(--paper);
+    font-family:"DM Sans",sans-serif;font-size:16px;font-weight:600;
+    padding:15px;border-radius:12px;margin-top:16px;
+    transition:filter .15s ease, transform .04s ease;
+  }
+  .go:hover{filter:brightness(1.08)}
+  .go:active{transform:translateY(1px)}
+
+  .status{
+    font-size:14px;padding:13px 14px;border-radius:10px;margin-top:16px;
+    background:color-mix(in srgb, var(--s4) 16%, var(--field));
+    border:1px solid color-mix(in srgb, var(--s4) 45%, var(--field));
+    color:var(--s4);
+  }
+
+  /* ---- weeks ---- */
+  #weeks{margin-top:8px}
+  .week-block{margin-bottom:22px}
+  .week-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
+  .week-title{font-family:"Fraunces",serif;font-weight:500;font-size:19px;margin:0;font-variation-settings:"opsz" 40}
+  .week-hint{font-family:"DM Mono",monospace;font-size:11px;color:var(--ink-soft)}
+
+  .week-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;
+  }
+  .day-card{
+    --accent:var(--s0);
+    background:var(--field);border:1px solid var(--line);border-radius:10px;
+    padding:12px;cursor:grab;border-top:3px solid var(--accent);
+    display:flex;flex-direction:column;gap:6px;
+  }
+  .day-card:active{cursor:grabbing}
+  .day-card.dragging{opacity:.35}
+  .day-card.drag-over{outline:2px dashed var(--accent);outline-offset:-2px}
+  .day-name{
+    font-family:"DM Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+    color:var(--ink-soft);display:flex;justify-content:space-between;align-items:center;
+  }
+  .day-badge{color:var(--accent);font-weight:600}
+  .day-main{font-family:"Fraunces",serif;font-weight:500;font-size:20px;line-height:1.1;font-variation-settings:"opsz" 40}
+  .day-main .unit{font-family:"DM Mono",monospace;font-size:11px;color:var(--ink-soft);font-weight:400}
+  .day-detail{font-size:12px;color:var(--ink-soft);line-height:1.5}
+
+  .plan-note{font-size:12.5px;color:var(--ink-soft);margin:8px 0 20px;line-height:1.6}
+
+  footer{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:26px;line-height:1.6}
+  footer a{color:var(--pine-2);text-decoration:none}
+  footer a:hover{text-decoration:underline}
+
+  @media (prefers-reduced-motion:reduce){
+    *{transition:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="index.html" class="hub-back">← NSM Resource Hub</a>
+  <header>
+    <div class="header-top">
+      <p class="eyebrow">5K → Marathon Plan</p>
+      <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" aria-pressed="false">
+        <span class="theme-icon" aria-hidden="true">☾</span>
+      </button>
+    </div>
+    <h1>Marathon Plan Builder</h1>
+    <p class="sub">A 15-week, time-based build adapted from the Norwegian Singles Method book and its companion pace calculator. Enter a recent 5K time to generate paces for every session.</p>
+  </header>
+
+  <div class="card">
+    <div class="row">
+      <label for="fk-min">5K time</label>
+      <div class="pace-time">
+        <input id="fk-min" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="24" aria-label="5K minutes">
+        <span class="colon" aria-hidden="true">:</span>
+        <input id="fk-sec" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="44" aria-label="5K seconds">
+      </div>
+    </div>
+
+    <div class="row inline">
+      <label style="margin:0">Pace unit</label>
+      <div class="seg" role="group" aria-label="Pace unit">
+        <button type="button" data-pace-unit="mi" aria-pressed="true">/ mi</button>
+        <button type="button" data-pace-unit="km" aria-pressed="false">/ km</button>
+      </div>
+    </div>
+
+    <button id="go" class="go">Build my plan</button>
+  </div>
+
+  <div id="result" aria-live="polite"></div>
+  <div id="weeks"></div>
+
+  <footer>
+    Time-based plan adapted from <i>Norwegian Singles Method: Subthreshold Running Kept Simple</i> and its companion marathon pace calculator.<br>
+    Week 1 of the original spreadsheet was dropped as a data error (a stray race entry with no book counterpart); doing so lines the 5K, 10K, and half-marathon tune-up races up exactly where the book places them.<br>
+    Drag a card to reorder it within its week. A guide, not gospel — trust how you feel out there.
+  </footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const store = {
+    get(k){ try { return localStorage.getItem(k); } catch { return null; } },
+    set(k,v){ try { localStorage.setItem(k,v); } catch {} },
+  };
+
+  // ---- theme (everforest dark / light) ----
+  const themeMeta = document.getElementById("theme-color-meta");
+  const themeToggle = document.getElementById("theme-toggle");
+  const themeIcon = themeToggle.querySelector(".theme-icon");
+  const THEME_COLORS = { dark:"#2D353B", light:"#FFFBEF" };
+
+  function applyTheme(theme){
+    document.documentElement.setAttribute("data-theme", theme);
+    themeMeta.setAttribute("content", THEME_COLORS[theme]);
+    themeIcon.textContent = theme === "dark" ? "☾" : "☀";
+    themeToggle.setAttribute("aria-pressed", String(theme === "light"));
+    themeToggle.setAttribute("aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+  }
+
+  let theme = store.get("mb_theme") || "dark";
+  applyTheme(theme);
+  themeToggle.addEventListener("click", () => {
+    theme = theme === "dark" ? "light" : "dark";
+    store.set("mb_theme", theme);
+    applyTheme(theme);
+  });
+
+  // ---- reconciled 15-week plan data (see nsm_marathon_plan.md for provenance) ----
+  const PLAN_WEEKS = [{"week":1,"origLabel":"WEEK 2","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":112.0}]},{"week":2,"origLabel":"WEEK 3","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":4,"repMin":9},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":117.0}]},{"week":3,"origLabel":"WEEK 4","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":120.0}]},{"week":4,"origLabel":"WEEK 5","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":125.0}]},{"week":5,"origLabel":"WEEK 6","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"race","wu":25.0,"dist":5,"label":"5K RACE"},{"day":"Sun","t":"easy","min":130.0}]},{"week":6,"origLabel":"WEEK 7","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'"},{"day":"Wed","t":"easy","min":75.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Sun","t":"easy","min":130.0}]},{"week":7,"origLabel":"WEEK 8","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'"},{"day":"Sun","t":"easy","min":135.0}]},{"week":8,"origLabel":"WEEK 9","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":80.0},{"day":"Thu","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":4,"repMin":15,"restNote":"3'-4'"},{"day":"Sun","t":"easy","min":90.0}]},{"week":9,"origLabel":"WEEK 10","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'"},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":141.0}]},{"week":10,"origLabel":"WEEK 11","days":[{"day":"Mon","t":"easy","min":75.0},{"day":"Tue","t":"subt","wu":25.0,"reps":4,"repMin":9},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"easy","min":45.0},{"day":"Sun","t":"race","wu":25.0,"dist":10,"label":"10K RACE"}]},{"week":11,"origLabel":"WEEK 12","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":4,"repMin":9},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'"},{"day":"Sun","t":"easy","min":141.0}]},{"week":12,"origLabel":"WEEK 13","days":[{"day":"Mon","t":"easy","min":75.0},{"day":"Tue","t":"subt","wu":25.0,"reps":5,"repMin":6},{"day":"Wed","t":"easy","min":75.0},{"day":"Thu","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"easy","min":40.0},{"day":"Sun","t":"race","wu":15.0,"dist":21.1,"label":"HM RACE"}]},{"week":13,"origLabel":"WEEK 14","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"prog","wu":0,"min":75,"note":"Progressive, ramping toward marathon pace (~3x25' bands, no rest breaks)"},{"day":"Wed","t":"easy","min":90.0},{"day":"Thu","t":"easy","min":60.0},{"day":"Fri","t":"subt","wu":25.0,"reps":5,"repMin":15,"restNote":"2:30"},{"day":"Sat","t":"easy","min":45.0},{"day":"Sun","t":"longtempo","wu":75,"min":30,"note":"Medium-long run with 30 min at MP effort embedded in the middle"}]},{"week":14,"origLabel":"WEEK 15","days":[{"day":"Mon","t":"easy","min":45.0},{"day":"Tue","t":"prog","wu":30,"min":45,"note":"Progressive, ramping toward marathon pace, no rest breaks"},{"day":"Wed","t":"easy","min":45.0},{"day":"Thu","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"easy","min":45.0},{"day":"Sun","t":"subt","wu":75,"reps":3,"repMin":9,"restNote":"jog 4 min","note":"Embedded in a medium-long run"}]},{"week":15,"origLabel":"RACE WEEK","days":[{"day":"Mon","t":"easy","min":45.0},{"day":"Tue","t":"subt","wu":30.0,"reps":1,"repMin":15},{"day":"Wed","t":"easy","min":45.0},{"day":"Thu","t":"subt","wu":30.0,"reps":1,"repMin":15},{"day":"Fri","t":"easy","min":40.0},{"day":"Sat","t":"easy","min":15.0},{"day":"Sun","t":"marathon","dist":42.2}]}];
+
+  // ---- state ----
+  const state = { paceUnit: store.get("mb_paceUnit") || "mi" };
+  let zones = null; // computed pace zones once a 5K time is submitted
+
+  // ---- DOM refs ----
+  const $ = sel => document.querySelector(sel);
+  const fkMinEl = $("#fk-min");
+  const fkSecEl = $("#fk-sec");
+  const goEl = $("#go");
+  const resultEl = $("#result");
+  const weeksEl = $("#weeks");
+
+  const saved = (store.get("mb_fk") || "").match(/^(\d{1,2}):([0-5]\d)$/);
+  if (saved){ fkMinEl.value = saved[1]; fkSecEl.value = saved[2]; }
+
+  [fkMinEl, fkSecEl].forEach(el => {
+    el.addEventListener("input", () => {
+      el.value = el.value.replace(/\D/g, "").slice(0, 2);
+    });
+  });
+  fkMinEl.addEventListener("input", () => {
+    if (fkMinEl.value.length === 2) fkSecEl.focus();
+  });
+  const fkStr = () => `${fkMinEl.value}:${fkSecEl.value.padStart(2, "0")}`;
+
+  // ---- toggles ----
+  document.querySelectorAll("[data-pace-unit]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.paceUnit = btn.dataset.paceUnit;
+      store.set("mb_paceUnit", state.paceUnit);
+      syncSeg();
+      if (zones) renderWeeks();
+    });
+  });
+  function syncSeg(){
+    document.querySelectorAll("[data-pace-unit]").forEach(b =>
+      b.setAttribute("aria-pressed", b.dataset.paceUnit === state.paceUnit));
+  }
+  syncSeg();
+
+  // ---- pace math (matches the source spreadsheet's own formulas) ----
+  function parseTime(str){
+    const m = String(str).trim().match(/^(\d{1,2}):([0-5]\d)$/);
+    if (!m) return null;
+    const total = (+m[1]) * 60 + (+m[2]);
+    return total > 0 ? total : null;
+  }
+  function fmtPace(sec){
+    sec = Math.round(sec);
+    return Math.floor(sec/60) + ":" + String(sec % 60).padStart(2,"0");
+  }
+  const MI_TO_KM = 1.60934;
+  const toUnit = secPerKm => state.paceUnit === "km" ? secPerKm : secPerKm * MI_TO_KM;
+
+  function computeZones(T){
+    const perKm5k = T / 5;
+    return {
+      easy: perKm5k * 1.485,
+      c: perKm5k * ((1.065 + 1.095) / 2),   // "15K" zone — fastest, 3-min reps
+      e: perKm5k * ((1.09  + 1.12 ) / 2),   // "HM" zone — middle, 5/6-min reps
+      g: perKm5k * ((1.11  + 1.145) / 2),   // "30K/MP" zone — slowest, 9/10/12/15-min reps
+    };
+  }
+  function zoneForRepMin(min){
+    if (min <= 3) return "c";
+    if (min <= 6) return "e";
+    return "g";
+  }
+  function restFor(day){
+    if (day.restNote) return day.restNote;
+    if (day.t !== "subt" || day.reps <= 1) return null;
+    return day.repMin <= 6 ? "60s" : "90s";
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  const ERRORS = { pace: "Enter your 5K time as minutes:seconds, like 24:44." };
+  function showError(key){
+    resultEl.innerHTML = `<div class="status" role="alert">${ERRORS[key]}</div>`;
+  }
+
+  // ---- day order persistence (per week, reorder-within-week only) ----
+  function loadOrder(weekNum){
+    try {
+      const raw = store.get("mb_order_" + weekNum);
+      const arr = raw ? JSON.parse(raw) : null;
+      if (Array.isArray(arr) && arr.length === 7) return arr;
+    } catch {}
+    return [0,1,2,3,4,5,6];
+  }
+  function saveOrder(weekNum, order){
+    store.set("mb_order_" + weekNum, JSON.stringify(order));
+  }
+
+  // ---- card rendering ----
+  const TYPE_META = {
+    easy:      { label: "Easy",       accent: "var(--s0)" },
+    subt:      { label: "Sub-T",      accent: "var(--s1)" },
+    race:      { label: "Race",       accent: "var(--s4)" },
+    prog:      { label: "Progressive",accent: "var(--s2)" },
+    longtempo: { label: "Long + Tempo", accent: "var(--s2)" },
+    marathon:  { label: "Race Day",   accent: "var(--s4)" },
+  };
+
+  function distanceFor(minutes, paceSecPerUnit){
+    return (minutes * 60) / paceSecPerUnit;
+  }
+
+  function dayCardHTML(day){
+    const meta = TYPE_META[day.t];
+    const unit = state.paceUnit;
+    let main = "", detail = "";
+
+    if (day.t === "easy"){
+      const pace = toUnit(zones.easy);
+      const dist = distanceFor(day.min, pace);
+      main = `${Math.round(day.min)} <span class="unit">min</span>`;
+      detail = `${fmtPace(pace)} / ${unit} easy · ~${dist.toFixed(1)} ${unit}`;
+    } else if (day.t === "subt"){
+      const zoneKey = zoneForRepMin(day.repMin);
+      const pace = toUnit(zones[zoneKey]);
+      const rest = restFor(day);
+      main = `${fmtPace(pace)} <span class="unit">/ ${unit}</span>`;
+      const parts = [`${day.reps}×${day.repMin}'`];
+      if (rest) parts.push(`rest ${escapeHtml(rest)}`);
+      if (day.wu) parts.push(`${day.wu}min WU/CD`);
+      detail = parts.join(" · ");
+      if (day.note) detail += ` · ${escapeHtml(day.note)}`;
+    } else if (day.t === "race"){
+      const label = day.dist === 21.1 ? "Half Marathon" : `${day.dist}K`;
+      main = label;
+      detail = "Race effort — not a prescribed training pace";
+    } else if (day.t === "prog" || day.t === "longtempo"){
+      const pace = toUnit(zones.g);
+      main = `${fmtPace(pace)} <span class="unit">/ ${unit}</span>`;
+      const parts = [];
+      if (day.wu) parts.push(`${day.wu}min WU/CD`);
+      parts.push(`${day.min}min core`);
+      detail = parts.join(" · ") + (day.note ? ` · ${escapeHtml(day.note)}` : "");
+    } else if (day.t === "marathon"){
+      main = "MARATHON";
+      detail = `${day.dist} km — this is the day`;
+    }
+
+    return `
+      <div class="day-card" style="--accent:${meta.accent}" draggable="true">
+        <div class="day-name"><span>${escapeHtml(day.day)}</span><span class="day-badge">${escapeHtml(meta.label)}</span></div>
+        <div class="day-main">${main}</div>
+        <div class="day-detail">${detail}</div>
+      </div>`;
+  }
+
+  function renderWeeks(){
+    weeksEl.innerHTML = PLAN_WEEKS.map(week => {
+      const order = loadOrder(week.week);
+      const days = order.map(i => week.days[i]);
+      const hasRace = week.days.some(d => d.t === "race" || d.t === "marathon");
+      return `
+        <div class="week-block" data-week="${week.week}">
+          <div class="week-head">
+            <h3 class="week-title">Week ${week.week}${hasRace ? " 🏁" : ""}</h3>
+            <span class="week-hint">drag to reorder</span>
+          </div>
+          <div class="week-grid">${days.map(dayCardHTML).join("")}</div>
+        </div>`;
+    }).join("");
+
+    attachDragHandlers();
+  }
+
+  // ---- drag and drop (native HTML5 DnD, reorder within a week only) ----
+  let dragSrc = null; // { weekBlock, srcPos }
+
+  function attachDragHandlers(){
+    document.querySelectorAll(".week-block").forEach(block => {
+      const weekNum = +block.dataset.week;
+      const cards = [...block.querySelectorAll(".day-card")];
+      cards.forEach((card, pos) => {
+        card.addEventListener("dragstart", () => {
+          dragSrc = { weekNum, pos };
+          card.classList.add("dragging");
+        });
+        card.addEventListener("dragend", () => {
+          card.classList.remove("dragging");
+          document.querySelectorAll(".day-card.drag-over").forEach(c => c.classList.remove("drag-over"));
+        });
+        card.addEventListener("dragover", e => {
+          if (!dragSrc || dragSrc.weekNum !== weekNum) return;
+          e.preventDefault();
+          card.classList.add("drag-over");
+        });
+        card.addEventListener("dragleave", () => card.classList.remove("drag-over"));
+        card.addEventListener("drop", e => {
+          e.preventDefault();
+          card.classList.remove("drag-over");
+          if (!dragSrc || dragSrc.weekNum !== weekNum || dragSrc.pos === pos) return;
+          const order = loadOrder(weekNum);
+          const [moved] = order.splice(dragSrc.pos, 1);
+          order.splice(pos, 0, moved);
+          saveOrder(weekNum, order);
+          renderWeeks();
+        });
+      });
+    });
+  }
+
+  function run(){
+    const T = parseTime(fkStr());
+    if (T === null){ showError("pace"); weeksEl.innerHTML = ""; return; }
+    store.set("mb_fk", fkStr());
+    resultEl.innerHTML = "";
+    zones = computeZones(T);
+    renderWeeks();
+  }
+
+  goEl.addEventListener("click", run);
+  [fkMinEl, fkSecEl].forEach(el =>
+    el.addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
+})();
+</script>
+<script data-goatcounter="https://rikkar69.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
