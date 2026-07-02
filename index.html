@@ -351,7 +351,7 @@
       <div class="row">
         <label for="hist-date">Race date</label>
         <input id="hist-date" type="date">
-        <p class="field-hint">Recent-day data can lag ~5 days behind.</p>
+        <p class="field-hint">Today and yesterday use live forecast data; older dates can lag ~5 days.</p>
       </div>
 
       <div class="row inline">
@@ -538,9 +538,15 @@
   const savedHistPace = (store.get("dp_histPace") || "").match(/^(\d{1,2}):([0-5]\d)$/);
   if (savedHistPace){ histPaceMinEl.value = savedHistPace[1]; histPaceSecEl.value = savedHistPace[2]; }
   histDateEl.value = store.get("dp_histDate") || "";
-  const histMaxDate = new Date();
-  histMaxDate.setDate(histMaxDate.getDate() - 5);
-  histDateEl.max = histMaxDate.toISOString().slice(0, 10);
+
+  // local (not UTC) yyyy-mm-dd, so "today" lines up with the user's own calendar day
+  function localDateStr(offsetDays){
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+  }
+  histDateEl.max = localDateStr(0);
+  const RECENT_CUTOFF = localDateStr(-1); // today and yesterday route to the forecast API instead of the archive
 
   // ---- tabs ----
   let activeTab = "live";
@@ -826,6 +832,29 @@
     return { dew, temp };
   }
 
+  // today / yesterday: the archive has a ~5-day lag, but the forecast API keeps
+  // the last day of hourly readings around via past_days
+  async function getRecentConditions(lat, lon, date, hour, unit){
+    const tu = unit === "f" ? "fahrenheit" : "celsius";
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}`
+      + `&hourly=dew_point_2m,temperature_2m&temperature_unit=${tu}&timezone=auto&past_days=1&forecast_days=1`;
+    let res;
+    try { res = await fetch(url); }
+    catch { throw new Error("net"); }
+    if (!res.ok) throw new Error("weather");
+    const d = await res.json();
+    const times = d.hourly && d.hourly.time;
+    if (!times || !times.length) throw new Error("weather");
+    const target = `${date}T${String(hour).padStart(2, "0")}:00`;
+    let idx = times.indexOf(target);
+    if (idx === -1) idx = times.findIndex(t => t.slice(0, 10) === date);
+    if (idx === -1) throw new Error("weather");
+    const dew = d.hourly.dew_point_2m[idx];
+    const temp = d.hourly.temperature_2m[idx];
+    if (typeof dew !== "number" || typeof temp !== "number") throw new Error("weather");
+    return { dew, temp };
+  }
+
   const ERRORS = {
     pace: "Enter your pace as minutes:seconds, like 8:00.",
     location: "Pick a city from the list, or use your location.",
@@ -833,7 +862,7 @@
     geofail: "Couldn't get your location. Try again or pick a city.",
     geounsupported: "Your browser doesn't support geolocation. Pick a city instead.",
     date: "Pick the date you ran that race.",
-    futuredate: "Historical data has about a 5-day lag — pick an earlier date.",
+    futuredate: "Pick a date that's already happened.",
     weather: "Couldn't read the weather there. Try again in a moment.",
     net:  "Network's not reachable. Check your connection and retry.",
   };
@@ -994,7 +1023,9 @@
     resultEl.innerHTML = "";
 
     try {
-      const { dew, temp } = await getHistoricalConditions(selectedLoc.lat, selectedLoc.lon, date, histHour, state.tempUnit);
+      const { dew, temp } = date >= RECENT_CUTOFF
+        ? await getRecentConditions(selectedLoc.lat, selectedLoc.lon, date, histHour, state.tempUnit)
+        : await getHistoricalConditions(selectedLoc.lat, selectedLoc.lon, date, histHour, state.tempUnit);
       renderHistResult(selectedLoc, dew, temp, actualSec, date);
     } catch (err){
       showError(err.message);
