@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#2D353B" id="theme-color-meta">
+<title>Sub-T Pace Converter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root,
+  [data-theme="dark"]{
+    --paper:#2D353B;
+    --paper-2:#343F44;
+    --ink:#D3C6AA;
+    --ink-soft:#9DA9A0;
+    --line:#475258;
+    --pine:#A7C080;
+    --pine-2:#83C092;
+    --field:#343F44;
+    --s4:#E67E80;
+
+    --radius:14px;
+    --shadow:0 1px 2px rgba(0,0,0,.18), 0 8px 24px rgba(0,0,0,.22);
+  }
+
+  [data-theme="light"]{
+    --paper:#FFFBEF;
+    --paper-2:#F2EFDB;
+    --ink:#5C6A72;
+    --ink-soft:#829181;
+    --line:#E8E5CF;
+    --pine:#8DA101;
+    --pine-2:#35A77C;
+    --field:#FFFFFF;
+    --s4:#F85552;
+
+    --shadow:0 1px 2px rgba(92,106,114,.06), 0 8px 24px rgba(92,106,114,.08);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"DM Sans",system-ui,sans-serif;
+    font-size:16px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+    padding:max(20px,env(safe-area-inset-top)) 18px 56px;
+    display:flex;
+    justify-content:center;
+    transition:background .15s ease, color .15s ease;
+  }
+  .wrap{width:100%;max-width:440px}
+
+  /* ---- header ---- */
+  header{margin:6px 0 22px}
+  .hub-back{
+    display:inline-flex;align-items:center;gap:6px;
+    font-family:"DM Mono",monospace;font-size:12px;letter-spacing:.06em;
+    color:var(--ink-soft);text-decoration:none;margin:0 0 16px;
+  }
+  .hub-back:hover{color:var(--pine-2)}
+  .header-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+  .eyebrow{
+    font-family:"DM Mono",monospace;
+    font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--pine-2);margin:0 0 6px;
+  }
+  .theme-toggle{
+    flex:none;width:34px;height:34px;border-radius:9px;
+    border:1px solid var(--line);background:var(--field);color:var(--ink);
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font-size:15px;line-height:1;transition:background .15s ease;
+  }
+  .theme-toggle:hover{background:var(--paper-2)}
+  h1{
+    font-family:"Fraunces",serif;
+    font-weight:500;font-size:34px;line-height:1.04;
+    letter-spacing:-.01em;margin:0;
+    font-variation-settings:"opsz" 60;
+  }
+  .sub{color:var(--ink-soft);font-size:14px;margin:8px 0 0;max-width:36ch}
+
+  /* ---- card ---- */
+  .card{
+    background:var(--field);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:18px;
+    margin-bottom:16px;
+  }
+
+  label{display:block;font-size:13px;font-weight:500;color:var(--ink-soft);margin:0 0 6px}
+  .row{margin-bottom:16px}
+  .row:last-child{margin-bottom:0}
+
+  input:focus-visible,button:focus-visible,.seg button:focus-visible{
+    outline:2px solid var(--pine-2);outline-offset:2px;
+  }
+
+  .pace-time{
+    width:100%;display:flex;align-items:center;gap:4px;
+    border:1px solid var(--line);border-radius:10px;background:var(--paper);
+    padding:0 4px;
+  }
+  .pace-time input{
+    flex:1;min-width:0;border:0;background:transparent;
+    padding:13px 6px;text-align:center;
+    font-family:"DM Mono",monospace;font-size:18px;color:var(--ink);
+  }
+  .pace-time input::placeholder{color:var(--ink-soft);opacity:.6}
+  .pace-time input:first-child{text-align:right}
+  .pace-time input:last-child{text-align:left}
+  .pace-time input:focus-visible{outline:none}
+  .pace-time:focus-within{outline:2px solid var(--pine-2);outline-offset:2px}
+  .pace-time .colon{font-family:"DM Mono",monospace;font-size:18px;color:var(--ink-soft)}
+
+  /* segmented toggle */
+  .seg{display:inline-flex;background:var(--paper-2);border-radius:10px;padding:3px;gap:2px}
+  .seg button{
+    border:0;background:transparent;cursor:pointer;
+    font-family:"DM Sans",sans-serif;font-size:14px;font-weight:500;color:var(--ink-soft);
+    padding:9px 13px;border-radius:8px;line-height:1;white-space:nowrap;
+  }
+  .seg button[aria-pressed=true]{background:var(--field);color:var(--ink);box-shadow:0 1px 2px rgba(21,33,27,.12)}
+
+  .inline{display:flex;justify-content:space-between;align-items:center;gap:12px}
+
+  /* primary action */
+  .go{
+    width:100%;border:0;cursor:pointer;
+    background:var(--pine);color:var(--paper);
+    font-family:"DM Sans",sans-serif;font-size:16px;font-weight:600;
+    padding:15px;border-radius:12px;margin-top:16px;
+    transition:filter .15s ease, transform .04s ease;
+  }
+  .go:hover{filter:brightness(1.08)}
+  .go:active{transform:translateY(1px)}
+
+  /* ---- result ---- */
+  #result{margin-top:16px}
+  .result-card{
+    background:var(--field);border:1px solid var(--line);border-radius:var(--radius);
+    box-shadow:var(--shadow);overflow:hidden;
+    opacity:0;transform:translateY(6px);
+    animation:rise .32s cubic-bezier(.2,.7,.3,1) forwards;
+  }
+  @keyframes rise{to{opacity:1;transform:none}}
+  .accent-bar{height:5px;background:var(--pine-2)}
+  .result-body{padding:20px 18px}
+
+  .fk-line{font-family:"DM Mono",monospace;font-size:12px;letter-spacing:.04em;color:var(--ink-soft);margin:0 0 16px}
+  .fk-line b{color:var(--ink);font-weight:500}
+
+  .rep-row{
+    display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+    padding:14px 0;border-top:1px solid var(--line);
+  }
+  .rep-row:first-of-type{border-top:0;padding-top:0}
+  .rep-label{font-size:14px;font-weight:500;color:var(--ink-soft)}
+  .rep-pace{display:flex;align-items:baseline;gap:6px}
+  .rep-pace .val{
+    font-family:"Fraunces",serif;font-weight:500;font-size:30px;line-height:1;
+    letter-spacing:-.01em;font-variation-settings:"opsz" 60;color:var(--pine-2);
+  }
+  .rep-pace .unit{font-family:"DM Mono",monospace;font-size:13px;color:var(--ink-soft)}
+
+  .disclaimer{font-size:12.5px;color:var(--ink-soft);margin:14px 0 0}
+
+  /* error */
+  .status{
+    font-size:14px;padding:13px 14px;border-radius:10px;margin-top:16px;
+    background:color-mix(in srgb, var(--s4) 16%, var(--field));
+    border:1px solid color-mix(in srgb, var(--s4) 45%, var(--field));
+    color:var(--s4);
+  }
+
+  footer{text-align:center;font-size:12px;color:var(--ink-soft);margin-top:26px;line-height:1.6}
+  footer a{color:var(--pine-2);text-decoration:none}
+  footer a:hover{text-decoration:underline}
+  footer i{font-style:italic}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="index.html" class="hub-back">← NSM Resource Hub</a>
+  <header>
+    <div class="header-top">
+      <p class="eyebrow">5K → Sub-Threshold Pace</p>
+      <button type="button" id="theme-toggle" class="theme-toggle" aria-label="Switch to light mode" aria-pressed="false">
+        <span class="theme-icon" aria-hidden="true">☾</span>
+      </button>
+    </div>
+    <h1>Sub-T Pace Converter</h1>
+    <p class="sub">Enter a recent 5K time and get your estimated 3, 6, and 10-minute subthreshold rep paces.</p>
+  </header>
+
+  <div class="card">
+    <div class="row">
+      <label for="fk-min">5K time</label>
+      <div class="pace-time">
+        <input id="fk-min" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="24" aria-label="5K minutes">
+        <span class="colon" aria-hidden="true">:</span>
+        <input id="fk-sec" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="44" aria-label="5K seconds">
+      </div>
+    </div>
+
+    <div class="row inline">
+      <label style="margin:0">Pace unit</label>
+      <div class="seg" role="group" aria-label="Pace unit">
+        <button type="button" data-pace-unit="mi" aria-pressed="true">/ mi</button>
+        <button type="button" data-pace-unit="km" aria-pressed="false">/ km</button>
+      </div>
+    </div>
+
+    <button id="go" class="go">Convert</button>
+  </div>
+
+  <div id="result" aria-live="polite"></div>
+
+  <footer>
+    Equations reverse-fitted from the pace table in <i>Norwegian Singles Method: Subthreshold Running Kept Simple</i>.<br>
+    Estimates only — not confirmed official formulas from the book.
+  </footer>
+</div>
+
+<script>
+(() => {
+  "use strict";
+
+  const store = {
+    get(k){ try { return localStorage.getItem(k); } catch { return null; } },
+    set(k,v){ try { localStorage.setItem(k,v); } catch {} },
+  };
+
+  // ---- theme (everforest dark / light) ----
+  const themeMeta = document.getElementById("theme-color-meta");
+  const themeToggle = document.getElementById("theme-toggle");
+  const themeIcon = themeToggle.querySelector(".theme-icon");
+  const THEME_COLORS = { dark:"#2D353B", light:"#FFFBEF" };
+
+  function applyTheme(theme){
+    document.documentElement.setAttribute("data-theme", theme);
+    themeMeta.setAttribute("content", THEME_COLORS[theme]);
+    themeIcon.textContent = theme === "dark" ? "☾" : "☀";
+    themeToggle.setAttribute("aria-pressed", String(theme === "light"));
+    themeToggle.setAttribute("aria-label", theme === "dark" ? "Switch to light mode" : "Switch to dark mode");
+  }
+
+  let theme = store.get("st_theme") || "dark";
+  applyTheme(theme);
+  themeToggle.addEventListener("click", () => {
+    theme = theme === "dark" ? "light" : "dark";
+    store.set("st_theme", theme);
+    applyTheme(theme);
+  });
+
+  // ---- state ----
+  const state = { paceUnit: store.get("st_paceUnit") || "mi" };
+
+  // ---- DOM refs ----
+  const $ = sel => document.querySelector(sel);
+  const fkMinEl = $("#fk-min");
+  const fkSecEl = $("#fk-sec");
+  const goEl = $("#go");
+  const resultEl = $("#result");
+
+  const saved = (store.get("st_fk") || "").match(/^(\d{1,2}):([0-5]\d)$/);
+  if (saved){ fkMinEl.value = saved[1]; fkSecEl.value = saved[2]; }
+
+  [fkMinEl, fkSecEl].forEach(el => {
+    el.addEventListener("input", () => {
+      el.value = el.value.replace(/\D/g, "").slice(0, 2);
+    });
+  });
+  fkMinEl.addEventListener("input", () => {
+    if (fkMinEl.value.length === 2) fkSecEl.focus();
+  });
+  const fkStr = () => `${fkMinEl.value}:${fkSecEl.value.padStart(2, "0")}`;
+
+  // ---- toggles ----
+  document.querySelectorAll("[data-pace-unit]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      state.paceUnit = btn.dataset.paceUnit;
+      store.set("st_paceUnit", state.paceUnit);
+      syncSeg();
+      if (resultEl.dataset.hasResult) run();
+    });
+  });
+  function syncSeg(){
+    document.querySelectorAll("[data-pace-unit]").forEach(b =>
+      b.setAttribute("aria-pressed", b.dataset.paceUnit === state.paceUnit));
+  }
+  syncSeg();
+
+  // ---- pace math ----
+  function parseTime(str){
+    const m = String(str).trim().match(/^(\d{1,2}):([0-5]\d)$/);
+    if (!m) return null;
+    const total = (+m[1]) * 60 + (+m[2]);
+    return total > 0 ? total : null;
+  }
+  function fmtPace(sec){
+    sec = Math.round(sec);
+    return Math.floor(sec/60) + ":" + String(sec % 60).padStart(2,"0");
+  }
+
+  const MI_TO_KM = 1.60934;
+  function buildRows(T, unit){
+    const threeMin = 0.321496 * T + 22.44;
+    const sixMin   = 0.328865 * T + 24.18;
+    const tenMin   = 0.338341 * T + 25.98;
+    const conv = s => unit === "mi" ? s : s / MI_TO_KM;
+    return [
+      { label: "3 min reps",  pace: fmtPace(conv(threeMin)) },
+      { label: "6 min reps",  pace: fmtPace(conv(sixMin)) },
+      { label: "10 min reps", pace: fmtPace(conv(tenMin)) },
+    ];
+  }
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
+
+  function showError(msg){
+    resultEl.dataset.hasResult = "";
+    resultEl.innerHTML = `<div class="status" role="alert">${escapeHtml(msg)}</div>`;
+  }
+
+  function run(){
+    const T = parseTime(fkStr());
+    if (T === null){
+      showError("Enter your 5K time as minutes:seconds, like 24:44.");
+      return;
+    }
+    store.set("st_fk", fkStr());
+
+    const unit = "/ " + state.paceUnit;
+    const rows = buildRows(T, state.paceUnit);
+    resultEl.dataset.hasResult = "1";
+    resultEl.innerHTML = `
+      <div class="result-card">
+        <div class="accent-bar"></div>
+        <div class="result-body">
+          <p class="fk-line">5K time <b>${fmtPace(T)}</b></p>
+          ${rows.map(r => `
+            <div class="rep-row">
+              <span class="rep-label">${escapeHtml(r.label)}</span>
+              <span class="rep-pace"><span class="val">${r.pace}</span><span class="unit">${unit}</span></span>
+            </div>`).join("")}
+          <p class="disclaimer">Paces are estimated from the Norwegian Singles Method Sub-T table — treat as a guide, not gospel.</p>
+        </div>
+      </div>`;
+  }
+
+  goEl.addEventListener("click", run);
+  [fkMinEl, fkSecEl].forEach(el =>
+    el.addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
+})();
+</script>
+<script data-goatcounter="https://rikkar69.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
