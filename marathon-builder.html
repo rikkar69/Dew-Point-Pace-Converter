@@ -159,9 +159,20 @@
   /* ---- weeks ---- */
   #weeks{margin-top:8px}
   .week-block{margin-bottom:22px}
-  .week-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:10px}
+  .week-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:8px}
   .week-title{font-family:"Fraunces",serif;font-weight:500;font-size:19px;margin:0;font-variation-settings:"opsz" 40}
   .week-hint{font-family:"DM Mono",monospace;font-size:11px;color:var(--ink-soft)}
+
+  .week-stats{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    background:var(--paper-2);border-radius:9px;padding:9px 12px;margin-bottom:10px;
+    font-family:"DM Mono",monospace;font-size:12px;color:var(--ink-soft);
+  }
+  .week-stats b{color:var(--ink);font-weight:500}
+  .week-stats .bar{
+    flex:1;min-width:60px;height:6px;border-radius:3px;overflow:hidden;display:flex;background:var(--line);
+  }
+  .week-stats .bar span{height:100%}
 
   .week-grid{
     display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;
@@ -430,6 +441,60 @@
       </div>`;
   }
 
+  // warm-up/cool-down minutes count as easy-pace mileage & easy time, per the
+  // same treatment the source spreadsheet gives WU/CD
+  function computeWeekStats(week){
+    const unit = state.paceUnit;
+    const easyPace = toUnit(zones.easy);
+    const gPace = toUnit(zones.g);
+    let easyMin = 0, subtMin = 0, dist = 0;
+
+    week.days.forEach(day => {
+      if (day.t === "easy"){
+        easyMin += day.min;
+        dist += distanceFor(day.min, easyPace);
+      } else if (day.t === "subt"){
+        const wu = day.wu || 0;
+        easyMin += wu;
+        dist += distanceFor(wu, easyPace);
+        const repTotal = day.reps * day.repMin;
+        subtMin += repTotal;
+        dist += distanceFor(repTotal, toUnit(zones[zoneForRepMin(day.repMin)]));
+      } else if (day.t === "prog" || day.t === "longtempo"){
+        const wu = day.wu || 0;
+        easyMin += wu;
+        dist += distanceFor(wu, easyPace);
+        subtMin += day.min;
+        dist += distanceFor(day.min, gPace);
+      } else if (day.t === "race"){
+        const wu = day.wu || 0;
+        easyMin += wu;
+        dist += distanceFor(wu, easyPace);
+        dist += unit === "km" ? day.dist : day.dist / MI_TO_KM;
+      } else if (day.t === "marathon"){
+        dist += unit === "km" ? day.dist : day.dist / MI_TO_KM;
+      }
+    });
+
+    const totalMin = easyMin + subtMin;
+    const pctSubt = totalMin ? Math.round((subtMin / totalMin) * 100) : 0;
+    return { dist, pctSubt, pctEasy: 100 - pctSubt };
+  }
+
+  function weekStatsHTML(week){
+    const { dist, pctSubt, pctEasy } = computeWeekStats(week);
+    const unit = state.paceUnit;
+    return `
+      <div class="week-stats">
+        <span><b>${dist.toFixed(1)}</b> ${unit}</span>
+        <div class="bar" aria-hidden="true">
+          <span style="width:${pctEasy}%;background:var(--s0)"></span><span style="width:${pctSubt}%;background:var(--s1)"></span>
+        </div>
+        <span><b>${pctEasy}%</b> easy</span>
+        <span><b>${pctSubt}%</b> Sub-T</span>
+      </div>`;
+  }
+
   function renderWeeks(){
     weeksEl.innerHTML = PLAN_WEEKS.map(week => {
       const order = loadOrder(week.week);
@@ -441,6 +506,7 @@
             <h3 class="week-title">Week ${week.week}${hasRace ? " 🏁" : ""}</h3>
             <span class="week-hint">drag to reorder</span>
           </div>
+          ${weekStatsHTML(week)}
           <div class="week-grid">${days.map(dayCardHTML).join("")}</div>
         </div>`;
     }).join("");
