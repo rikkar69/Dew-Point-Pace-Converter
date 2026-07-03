@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/exceljs@4/dist/exceljs.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js" integrity="sha384-Pqp51FUN2/qzfxZxBCtF0stpc9ONI6MYZpVqmo8m20SoaQCzf+arZvACkLkirlPz" crossorigin="anonymous" defer></script>
 <style>
   :root,
   [data-theme="dark"]{
@@ -123,6 +123,9 @@
   input[type=text]::placeholder{color:var(--ink-soft);opacity:.6}
   .field-hint{font-size:12px;color:var(--ink-soft);margin:6px 0 0}
   .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .key-row{display:flex;gap:8px}
+  .key-row input{flex:1;min-width:0}
+  .key-row .ghost{flex:none}
 
   .pace-time{
     width:100%;display:flex;align-items:center;gap:4px;
@@ -317,8 +320,11 @@
       <p class="field-hint" style="margin:0 0 12px">⚠ Experimental — untested against a real intervals.icu account. Try it with your own key before trusting it; the "Download intervals.icu text" option above is the safer, verified path.</p>
       <div class="row">
         <label for="icu-api-key">intervals.icu API key</label>
-        <input id="icu-api-key" type="text" inputmode="text" placeholder="paste your personal API key" autocomplete="off">
-        <p class="field-hint">Stored only in this browser. Sent directly to intervals.icu when you push — never anywhere else. Find yours in intervals.icu under Settings → Developer Settings.</p>
+        <div class="key-row">
+          <input id="icu-api-key" type="text" inputmode="text" placeholder="paste your personal API key" autocomplete="off">
+          <button type="button" id="icu-key-clear" class="ghost">Clear key</button>
+        </div>
+        <p class="field-hint">Not saved anywhere — held only in this field for the current page session, and sent directly to intervals.icu when you push. Find yours in intervals.icu under Settings → Developer Settings. Paste it, push, then clear it when you're done.</p>
       </div>
       <div class="two-col">
         <div>
@@ -699,13 +705,13 @@
       main = `${fmtPace(r.pace)} <span class="unit">/ ${unit}</span>`;
       const parts = [`${r.reps}×${r.repMin}'`];
       if (r.rest) parts.push(`rest ${escapeHtml(r.rest)}`);
-      if (r.wu) parts.push(`${r.wu}min WU/CD each side`);
+      if (r.wu) parts.push(`${r.wu}min WU/CD`);
       parts.push(`${r.distance.toFixed(1)} ${unit}`);
       detail = parts.join(" · ");
       if (r.isAtypicalPace) detail += " · 101% of goal MP";
     } else if (r.type === "race"){
       main = r.raceLabel;
-      detail = `Race effort — ${r.distKm}km, not a prescribed training pace`;
+      detail = `Race effort - ${r.distKm}km, not a prescribed training pace`;
     } else if (r.type === "mp_distance"){
       main = `${fmtPace(r.pace)} <span class="unit">/ ${unit}</span>`;
       detail = `${r.distUnit.toFixed(1)} ${unit} at goal MP · ${r.wu}min WU + ${r.cd}min CD`;
@@ -718,7 +724,7 @@
       detail = `${r.reps}×${r.repMin}' at goal MP · rest ${escapeHtml(r.rest)} · ${r.wu}min WU + ${r.cd}min CD`;
     } else if (r.type === "marathon"){
       main = "MARATHON";
-      detail = `${r.distKm} km — this is the day`;
+      detail = `${r.distKm} km - this is the day`;
     } else {
       main = escapeHtml(r.raw || "?");
     }
@@ -963,7 +969,7 @@
           if (d.fixedDistance) notes = ["fixed distance", notes].filter(Boolean).join(" · ");
         } else if (d.type === "subt"){
           main = paceStr(d.pace);
-          structure = `${d.reps}×${d.repMin}'${d.rest ? `, rest ${d.rest}` : ""}${d.wu ? `, ${d.wu}min WU/CD each side` : ""}`;
+          structure = `${d.reps}×${d.repMin}'${d.rest ? `, rest ${d.rest}` : ""}${d.wu ? `, ${d.wu}min WU/CD` : ""}`;
           if (d.isAtypicalPace) notes = "101% of goal MP";
         } else if (d.type === "race"){
           main = d.raceLabel; structure = "Race effort";
@@ -1048,6 +1054,12 @@
   $("#export-xlsx").addEventListener("click", downloadExcel);
   $("#export-icu-text").addEventListener("click", downloadIcuText);
   $("#icu-push").addEventListener("click", pushToIntervals);
+  $("#icu-key-clear").addEventListener("click", () => {
+    const keyEl = $("#icu-api-key");
+    keyEl.value = "";
+    keyEl.focus();
+    icuStatus("API key cleared from this page.", true);
+  });
 
   function run(){
     const T = parseTime(fkStr());
