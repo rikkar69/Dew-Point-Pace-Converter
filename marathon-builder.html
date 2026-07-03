@@ -107,6 +107,8 @@
   }
   @media (min-width:700px){
     .card{max-width:440px}
+    .builder-row{display:flex;align-items:flex-start;gap:16px;flex-wrap:wrap}
+    .builder-row > .card{margin-bottom:0}
   }
 
   label{display:block;font-size:13px;font-weight:500;color:var(--ink-soft);margin:0 0 6px}
@@ -243,6 +245,7 @@
     <p class="sub">A 15-week, time-based build adapted from the Norwegian Singles Method book. Enter a recent 5K time to generate paces for every session.</p>
   </header>
 
+  <div class="builder-row">
   <div class="card">
     <div class="row">
       <label for="fk-min">5K time</label>
@@ -286,9 +289,8 @@
     </div>
 
     <button id="go" class="go">Build my plan</button>
+    <div id="result" aria-live="polite"></div>
   </div>
-
-  <div id="result" aria-live="polite"></div>
 
   <div id="export-card" class="card" hidden>
     <div class="row">
@@ -321,6 +323,7 @@
       <button type="button" id="icu-push" class="go" style="margin-top:16px">Push to intervals.icu</button>
       <div id="icu-push-status"></div>
     </div>
+  </div>
   </div>
 
   <div id="weeks"></div>
