@@ -288,6 +288,16 @@
       <p class="field-hint">180 min is a commonly recommended cap, but override it if you'd like. The cap applies at week 11 and steps down 5 min/week for earlier weeks, floored at your starting minutes.</p>
     </div>
 
+    <div class="row inline">
+      <label for="wu-toggle" style="margin:0">Include Sub-T warm-up/cool-down</label>
+      <input id="wu-toggle" type="checkbox" checked style="width:18px;height:18px;accent-color:var(--pine)">
+    </div>
+    <div class="row" id="wu-minutes-row">
+      <label for="wu-minutes">Warm-up / cool-down each side (min)</label>
+      <input id="wu-minutes" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="10">
+      <p class="field-hint">Applied to each side of standard Sub-T days (20 min total by default). Atypical/goal-MP days use their own fixed warm-up.</p>
+    </div>
+
     <button id="go" class="go">Build my plan</button>
     <div id="result" aria-live="polite"></div>
   </div>
@@ -365,8 +375,52 @@
     applyTheme(theme);
   });
 
-  // ---- reconciled 15-week plan data (see nsm_marathon_plan.md for provenance) ----
-  const PLAN_WEEKS = [{"week":1,"origLabel":"WEEK 2","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":112.0,"longrun":true}]},{"week":2,"origLabel":"WEEK 3","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":4,"repMin":9},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":117.0,"longrun":true}]},{"week":3,"origLabel":"WEEK 4","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":120.0,"longrun":true}]},{"week":4,"origLabel":"WEEK 5","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":125.0,"longrun":true}]},{"week":5,"origLabel":"WEEK 6","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'","atypical":true},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"race","wu":25.0,"dist":5,"label":"5K RACE"},{"day":"Sun","t":"easy","min":130.0,"longrun":true}]},{"week":6,"origLabel":"WEEK 7","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":75.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Sun","t":"easy","min":130.0,"longrun":true}]},{"week":7,"origLabel":"WEEK 8","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'","atypical":true},{"day":"Sun","t":"easy","min":135.0,"longrun":true}]},{"week":8,"origLabel":"WEEK 9","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":80.0},{"day":"Thu","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":4,"repMin":15,"restNote":"3'-4'","atypical":true},{"day":"Sun","t":"easy","min":90.0,"longrun":true}]},{"week":9,"origLabel":"WEEK 10","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'","atypical":true},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":141.0,"longrun":true}]},{"week":10,"origLabel":"WEEK 11","days":[{"day":"Mon","t":"easy","min":75.0},{"day":"Tue","t":"subt","wu":25.0,"reps":4,"repMin":9},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"easy","min":45.0},{"day":"Sun","t":"race","wu":25.0,"dist":10,"label":"10K RACE"}]},{"week":11,"origLabel":"WEEK 12","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":4,"repMin":9},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'","atypical":true},{"day":"Sun","t":"easy","min":141.0,"longrun":true}]},{"week":12,"origLabel":"WEEK 13","days":[{"day":"Mon","t":"easy","min":75.0},{"day":"Tue","t":"subt","wu":25.0,"reps":5,"repMin":6},{"day":"Wed","t":"easy","min":75.0},{"day":"Thu","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"easy","min":40.0},{"day":"Sun","t":"race","wu":15.0,"dist":21.1,"label":"HM RACE"}]},{"week":13,"origLabel":"WEEK 14","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"prog","wu":0,"min":75,"note":"Progressive, ramping toward marathon pace (~3x25' bands, no rest breaks)"},{"day":"Wed","t":"easy","min":90.0},{"day":"Thu","t":"easy","min":60.0},{"day":"Fri","t":"subt","wu":25.0,"reps":5,"repMin":15,"restNote":"2:30","atypical":true},{"day":"Sat","t":"easy","min":45.0},{"day":"Sun","t":"mp_distance","wuEach":25,"distKm":10,"note":"10K (6.2mi) at goal marathon pace"}]},{"week":14,"origLabel":"WEEK 15","days":[{"day":"Mon","t":"easy","min":45.0},{"day":"Tue","t":"mp_progression","wuEach":10,"segments":[{"min":25,"pct":92},{"min":25,"pct":93},{"min":25,"pct":100}],"note":"Progressive, no rest between segments"},{"day":"Wed","t":"easy","min":45.0},{"day":"Thu","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"easy","min":45.0},{"day":"Sun","t":"mp_reps","wuEach":30,"reps":3,"repMin":10,"restNote":"~60s jog (estimated)","note":"Embedded in a medium-long run"}]},{"week":15,"origLabel":"RACE WEEK","days":[{"day":"Mon","t":"easy","min":45.0},{"day":"Tue","t":"subt","wu":30.0,"reps":1,"repMin":15},{"day":"Wed","t":"easy","min":45.0},{"day":"Thu","t":"subt","wu":30.0,"reps":1,"repMin":15},{"day":"Fri","t":"easy","min":40.0},{"day":"Sat","t":"easy","min":15.0},{"day":"Sun","t":"marathon","dist":42.2}]}];
+  // ---- schedule data, hand-transcribed directly from the book's own notes
+  // (see "Hand Copy of Book Schedule.xlsx" - Schedule / Normal Workouts / Atypical
+  // Workouts tables). Each week is [Mon,Tue,Wed,Thu,Fri,Sat,Sun] short codes,
+  // parsed generically by parseCode() rather than hand-expanded per day.
+  const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+  const SCHEDULE = [
+    ["60 E","3x12 S","60 E","6x5 S","60 E","10x3 S","LR E"],
+    ["60 E","4x10 S","60 E","6x5 S","60 E","10x3 S","LR E"],
+    ["60 E","3x12 S","60 E","6x5 S","60 E","10x3 S","LR E"],
+    ["60 E","3x12 S","60 E","6x5 S","60 E","10x3 S","LR E"],
+    ["60 E","3x15 S","60 E","6x5 S","45 E","5k Race","LR E"],
+    ["60 E","3x12 S","75 E","6x5 S","60 E","5k Race","LR E"],
+    ["60 E","3x12 S","60 E","3x12 S","45 E","3x15 S","LR E"],
+    ["60 E","3x12 S","75 E","10x3 S","45 E","4x15 S","LR E"],
+    ["60 E","3x12 S","60 E","3x15 S","45 E","10x3 S","LR E"],
+    ["75 E","4x10 S","60 E","8x3 S","45 E","10k E","10k Race"],
+    ["60 E","4x10 S","60 E","10x3 S","45 E","3x15 S","LR E"],
+    ["75 E","5x6 S","75 E","8x3 S","60 E","8km E","HM Race"],
+    ["60 E","75 E","90 E","60 E","5x15 S","10k E","Atypical 1"],
+    ["45 E","Atypical 2","45 E","8x3 S","60 E","10k E","Atypical 3"],
+    ["45 E","1x15 S","45 E","1x15 S","40 E","25 E","Marathon"],
+  ];
+
+  // the 3 marathon-pace-specific sessions from the book's own asterisk notes
+  const ATYPICAL = {
+    "Atypical 1": { type: "mp_distance", wu: 25, cd: 25, distKm: 10 },
+    "Atypical 2": { type: "mp_progression", wu: 10, cd: 10, segments: [{ min: 25, pct: 92 }, { min: 25, pct: 93 }, { min: 25, pct: 100 }] },
+    "Atypical 3": { type: "mp_reps", wu: 30, cd: 30, reps: 3, repMin: 10, rest: "2m" },
+  };
+  const RACE_DIST = { "5k": 5, "10k": 10, "HM": 21.1 };
+  const RACE_LABEL = { "5k": "5K", "10k": "10K", "HM": "Half Marathon" };
+
+  function parseCode(code){
+    if (code === "Marathon") return { type: "marathon", distKm: 42.2 };
+    if (ATYPICAL[code]) return { type: ATYPICAL[code].type, ...ATYPICAL[code] };
+    let m = code.match(/^(5k|10k|HM) Race$/);
+    if (m) return { type: "race", distKm: RACE_DIST[m[1]], label: RACE_LABEL[m[1]] };
+    if (code === "LR E") return { type: "easy", longrun: true };
+    m = code.match(/^(\d+(?:\.\d+)?)(?:k|km)\s+E$/i);
+    if (m) return { type: "easy", distKm: +m[1] };
+    m = code.match(/^(\d+)\s+E$/);
+    if (m) return { type: "easy", min: +m[1] };
+    m = code.match(/^(\d+)x(\d+)(?:\s+S)?$/);
+    if (m) return { type: "subt", reps: +m[1], repMin: +m[2] };
+    return { type: "unknown", raw: code };
+  }
 
   // ---- state ----
   const state = { paceUnit: store.get("mb_paceUnit") || "mi" };
@@ -385,6 +439,9 @@
   const goEl = $("#go");
   const resultEl = $("#result");
   const weeksEl = $("#weeks");
+  const wuToggleEl = $("#wu-toggle");
+  const wuMinutesEl = $("#wu-minutes");
+  const wuMinutesRow = $("#wu-minutes-row");
 
   const saved = (store.get("mb_fk") || "").match(/^(\d{1,2}):([0-5]\d)$/);
   if (saved){ fkMinEl.value = saved[1]; fkSecEl.value = saved[2]; }
@@ -392,6 +449,27 @@
   longCapEl.value = store.get("mb_longCap") || "";
   const savedMp = store.get("mb_mpKm");
   if (savedMp) mpOverrideKm = parseFloat(savedMp);
+  wuToggleEl.checked = store.get("mb_wuToggle") !== "off";
+  wuMinutesEl.value = store.get("mb_wuMinutes") || "";
+
+  function syncWuRow(){ wuMinutesRow.style.display = wuToggleEl.checked ? "" : "none"; }
+  syncWuRow();
+  wuToggleEl.addEventListener("change", () => {
+    store.set("mb_wuToggle", wuToggleEl.checked ? "on" : "off");
+    syncWuRow();
+    if (fiveKSec) renderWeeks();
+  });
+  wuMinutesEl.addEventListener("input", () => {
+    wuMinutesEl.value = wuMinutesEl.value.replace(/\D/g, "").slice(0, 2);
+  });
+  wuMinutesEl.addEventListener("change", () => {
+    store.set("mb_wuMinutes", wuMinutesEl.value);
+    if (fiveKSec) renderWeeks();
+  });
+  function subtWuMinutes(){
+    if (!wuToggleEl.checked) return 0;
+    return parseFloat(wuMinutesEl.value) || 10;
+  }
 
   [fkMinEl, fkSecEl, mpMinEl, mpSecEl, longStartEl, longCapEl].forEach(el => {
     el.addEventListener("input", () => {
@@ -473,16 +551,23 @@
   function goalMpKm(){ return mpOverrideKm !== null ? mpOverrideKm : defaultMpKm(fiveKSec); }
   function easyPaceUnit(){ return fromMi(easyPaceMi(fiveKSec)); }
   function mpPaceUnit(){ return fromKm(goalMpKm()); }
-  function repPaceUnit(repMin, atypical){
-    let p = repPaceMi(fiveKSec, repMin);
-    if (atypical) p *= 1.01;
-    return fromMi(p);
+  function repPaceUnit(repMin){
+    return fromMi(repPaceMi(fiveKSec, repMin));
   }
 
-  function restFor(day){
-    if (day.restNote) return day.restNote;
-    if (day.t !== "subt" || day.reps <= 1) return null;
-    return day.repMin <= 6 ? "60s" : "90s";
+  // 15-min reps done more than once run at 101% of goal MP (the book's
+  // "3x5000/4x5000/5x5000"-equivalent atypical sessions); everything else uses
+  // the standard Sub-T Converter rep-duration bucket, including a lone 15-min
+  // rep (the race-week taper "1x15", which the book paces like a normal 10-min effort)
+  function subtPace(reps, repMin){
+    if (repMin === 15 && reps > 1) return mpPaceUnit() * 1.01;
+    return repPaceUnit(repMin);
+  }
+  // exact per-workout rest from the book's Normal Workouts table
+  function subtRest(reps, repMin){
+    if (reps <= 1) return null;
+    if (repMin === 15) return reps === 3 ? "2m" : "3m";
+    return repMin <= 6 ? "60s" : "90s";
   }
 
   // ---- long-run cap ramp: week 11 = cap, -5 min/week for earlier weeks, floored at start ----
@@ -527,11 +612,11 @@
     easy:           { label: "Easy",       accent: "var(--s0)" },
     subt:           { label: "Sub-T",      accent: "var(--s1)" },
     race:           { label: "Race",       accent: "var(--s4)" },
-    prog:           { label: "Progressive",accent: "var(--s2)" },
     mp_distance:    { label: "Goal MP",    accent: "var(--s2)" },
     mp_progression: { label: "Progressive",accent: "var(--s2)" },
     mp_reps:        { label: "Goal MP",    accent: "var(--s2)" },
     marathon:       { label: "Race Day",   accent: "var(--s4)" },
+    unknown:        { label: "?",          accent: "var(--s3)" },
   };
 
   function distanceFor(minutes, paceSecPerUnit){
@@ -539,105 +624,111 @@
   }
   const kmToUnit = km => state.paceUnit === "km" ? km : km / MI_TO_KM;
 
-  function dayCardHTML(day, weekNum){
-    const meta = TYPE_META[day.t];
+  // structured resolution of one schedule cell into everything a card/export
+  // needs - the single source of truth for both rendering and all exports
+  function resolveDay(code, dayName, weekNum){
+    const parsed = parseCode(code);
     const unit = state.paceUnit;
+    const label = TYPE_META[parsed.type] ? TYPE_META[parsed.type].label : parsed.type;
+    const base = { day: dayName, type: parsed.type, label, unit, code };
+    const easy = easyPaceUnit();
+
+    if (parsed.type === "easy"){
+      if (parsed.longrun){
+        const minutes = longRunMinutesFor(weekNum);
+        return { ...base, minutes: Math.round(minutes), pace: easy, distance: distanceFor(minutes, easy), longrun: true, easyMinutes: minutes, subtMinutes: 0 };
+      }
+      if (parsed.distKm != null){
+        const distance = kmToUnit(parsed.distKm);
+        const minutes = (distance * easy) / 60;
+        return { ...base, minutes: Math.round(minutes), pace: easy, distance, fixedDistance: true, easyMinutes: minutes, subtMinutes: 0 };
+      }
+      const minutes = parsed.min;
+      return { ...base, minutes, pace: easy, distance: distanceFor(minutes, easy), easyMinutes: minutes, subtMinutes: 0 };
+    }
+    if (parsed.type === "subt"){
+      const pace = subtPace(parsed.reps, parsed.repMin);
+      const wu = subtWuMinutes();
+      const rest = subtRest(parsed.reps, parsed.repMin);
+      const repMinutes = parsed.reps * parsed.repMin;
+      const distance = distanceFor(wu * 2, easy) + distanceFor(repMinutes, pace);
+      const isAtypicalPace = parsed.repMin === 15 && parsed.reps > 1;
+      return { ...base, reps: parsed.reps, repMin: parsed.repMin, pace, wu, rest, distance, isAtypicalPace, easyMinutes: wu * 2, subtMinutes: repMinutes };
+    }
+    if (parsed.type === "race"){
+      return { ...base, distKm: parsed.distKm, raceLabel: parsed.label, distance: kmToUnit(parsed.distKm), easyMinutes: 0, subtMinutes: 0 };
+    }
+    if (parsed.type === "marathon"){
+      return { ...base, distKm: parsed.distKm, distance: kmToUnit(parsed.distKm), easyMinutes: 0, subtMinutes: 0 };
+    }
+    if (parsed.type === "mp_distance"){
+      const pace = mpPaceUnit();
+      const distUnit = kmToUnit(parsed.distKm);
+      const distance = distanceFor(parsed.wu + parsed.cd, easy) + distUnit;
+      const subtMinutes = (distUnit * pace) / 60;
+      return { ...base, pace, wu: parsed.wu, cd: parsed.cd, distKm: parsed.distKm, distUnit, distance, easyMinutes: parsed.wu + parsed.cd, subtMinutes };
+    }
+    if (parsed.type === "mp_progression"){
+      const mp = mpPaceUnit();
+      const segments = parsed.segments.map(s => ({ minutes: s.min, pct: s.pct, pace: mp / (s.pct / 100) }));
+      let distance = distanceFor(parsed.wu + parsed.cd, easy);
+      let subtMinutes = 0;
+      segments.forEach(s => { distance += distanceFor(s.minutes, s.pace); subtMinutes += s.minutes; });
+      return { ...base, pace: mp, wu: parsed.wu, cd: parsed.cd, segments, distance, easyMinutes: parsed.wu + parsed.cd, subtMinutes };
+    }
+    if (parsed.type === "mp_reps"){
+      const pace = mpPaceUnit();
+      const repMinutes = parsed.reps * parsed.repMin;
+      const distance = distanceFor(parsed.wu + parsed.cd, easy) + distanceFor(repMinutes, pace);
+      return { ...base, pace, wu: parsed.wu, cd: parsed.cd, reps: parsed.reps, repMin: parsed.repMin, rest: parsed.rest, distance, easyMinutes: parsed.wu + parsed.cd, subtMinutes: repMinutes };
+    }
+    return { ...base, raw: parsed.raw, distance: 0, easyMinutes: 0, subtMinutes: 0 };
+  }
+
+  function dayCardHTML(r){
+    const meta = TYPE_META[r.type] || TYPE_META.unknown;
+    const unit = r.unit;
     let main = "", detail = "";
 
-    if (day.t === "easy"){
-      const pace = easyPaceUnit();
-      const minutes = day.longrun ? longRunMinutesFor(weekNum) : day.min;
-      const dist = distanceFor(minutes, pace);
-      main = `${Math.round(minutes)} <span class="unit">min</span>`;
-      detail = `${fmtPace(pace)} / ${unit} easy · ~${dist.toFixed(1)} ${unit}`;
-      if (day.longrun) detail += " · long run";
-    } else if (day.t === "subt"){
-      const pace = repPaceUnit(day.repMin, day.atypical);
-      const rest = restFor(day);
-      main = `${fmtPace(pace)} <span class="unit">/ ${unit}</span>`;
-      const parts = [`${day.reps}×${day.repMin}'`];
-      if (rest) parts.push(`rest ${escapeHtml(rest)}`);
-      if (day.wu) parts.push(`${day.wu}min WU/CD`);
+    if (r.type === "easy"){
+      main = `${r.minutes} <span class="unit">min</span>`;
+      detail = `${fmtPace(r.pace)} / ${unit} easy · ${r.distance.toFixed(1)} ${unit}`;
+      if (r.longrun) detail += " · long run";
+      if (r.fixedDistance) detail += " · fixed distance";
+    } else if (r.type === "subt"){
+      main = `${fmtPace(r.pace)} <span class="unit">/ ${unit}</span>`;
+      const parts = [`${r.reps}×${r.repMin}'`];
+      if (r.rest) parts.push(`rest ${escapeHtml(r.rest)}`);
+      if (r.wu) parts.push(`${r.wu}min WU/CD each side`);
+      parts.push(`${r.distance.toFixed(1)} ${unit}`);
       detail = parts.join(" · ");
-      if (day.atypical) detail += " · 101% of 3×10' pace";
-      if (day.note) detail += ` · ${escapeHtml(day.note)}`;
-    } else if (day.t === "race"){
-      const label = day.dist === 21.1 ? "Half Marathon" : `${day.dist}K`;
-      main = label;
-      detail = "Race effort — not a prescribed training pace";
-    } else if (day.t === "prog"){
-      const pace = mpPaceUnit();
-      main = `${fmtPace(pace)} <span class="unit">/ ${unit}</span>`;
-      const parts = [];
-      if (day.wu) parts.push(`${day.wu}min WU/CD`);
-      parts.push(`${day.min}min core, ramping to goal MP`);
-      detail = parts.join(" · ") + (day.note ? ` · ${escapeHtml(day.note)}` : "");
-    } else if (day.t === "mp_distance"){
-      const pace = mpPaceUnit();
-      const distUnit = kmToUnit(day.distKm);
-      main = `${fmtPace(pace)} <span class="unit">/ ${unit}</span>`;
-      detail = `${distUnit.toFixed(1)} ${unit} at goal MP · ${day.wuEach}min WU + ${day.wuEach}min CD (${day.wuEach*2} total)`;
-    } else if (day.t === "mp_progression"){
-      const segs = day.segments.map(s => `${s.min}min @ ${s.pct}% MP (${fmtPace(mpPaceUnit() / (s.pct/100))}/${unit})`);
-      main = `${fmtPace(mpPaceUnit())} <span class="unit">/ ${unit} MP</span>`;
-      detail = `${day.wuEach}min WU/CD each side (${day.wuEach*2} total) · ` + segs.join(" → ");
-      if (day.note) detail += ` · ${escapeHtml(day.note)}`;
-    } else if (day.t === "mp_reps"){
-      const pace = mpPaceUnit();
-      main = `${fmtPace(pace)} <span class="unit">/ ${unit}</span>`;
-      detail = `${day.reps}×${day.repMin}' at goal MP · rest ${escapeHtml(day.restNote)} · ${day.wuEach}min WU/CD each side (${day.wuEach*2} total)`;
-      if (day.note) detail += ` · ${escapeHtml(day.note)}`;
-    } else if (day.t === "marathon"){
+      if (r.isAtypicalPace) detail += " · 101% of goal MP";
+    } else if (r.type === "race"){
+      main = r.raceLabel;
+      detail = `Race effort — ${r.distKm}km, not a prescribed training pace`;
+    } else if (r.type === "mp_distance"){
+      main = `${fmtPace(r.pace)} <span class="unit">/ ${unit}</span>`;
+      detail = `${r.distUnit.toFixed(1)} ${unit} at goal MP · ${r.wu}min WU + ${r.cd}min CD`;
+    } else if (r.type === "mp_progression"){
+      const segs = r.segments.map(s => `${s.minutes}min @ ${s.pct}% MP (${fmtPace(s.pace)}/${unit})`);
+      main = `${fmtPace(r.pace)} <span class="unit">/ ${unit} MP</span>`;
+      detail = `${r.wu}min WU + ${r.cd}min CD · ` + segs.join(" → ");
+    } else if (r.type === "mp_reps"){
+      main = `${fmtPace(r.pace)} <span class="unit">/ ${unit}</span>`;
+      detail = `${r.reps}×${r.repMin}' at goal MP · rest ${escapeHtml(r.rest)} · ${r.wu}min WU + ${r.cd}min CD`;
+    } else if (r.type === "marathon"){
       main = "MARATHON";
-      detail = `${day.dist} km — this is the day`;
+      detail = `${r.distKm} km — this is the day`;
+    } else {
+      main = escapeHtml(r.raw || "?");
     }
 
     return `
       <div class="day-card" style="--accent:${meta.accent}" draggable="true">
-        <div class="day-name"><span>${escapeHtml(day.day)}</span><span class="day-badge">${escapeHtml(meta.label)}</span></div>
+        <div class="day-name"><span>${escapeHtml(r.day)}</span><span class="day-badge">${escapeHtml(r.label)}</span></div>
         <div class="day-main">${main}</div>
         <div class="day-detail">${detail}</div>
       </div>`;
-  }
-
-  // structured (non-HTML) resolution of a day, for the JSON/Excel/intervals.icu
-  // exports - uses the exact same pace functions as dayCardHTML so exports never
-  // drift from what's shown on the cards
-  function resolveDay(day, weekNum){
-    const unit = state.paceUnit;
-    const label = TYPE_META[day.t].label;
-    const base = { day: day.day, type: day.t, label, unit };
-
-    if (day.t === "easy"){
-      const pace = easyPaceUnit();
-      const minutes = day.longrun ? longRunMinutesFor(weekNum) : day.min;
-      return { ...base, minutes: Math.round(minutes), pace, distance: distanceFor(minutes, pace), longrun: !!day.longrun };
-    }
-    if (day.t === "subt"){
-      const pace = repPaceUnit(day.repMin, day.atypical);
-      return { ...base, reps: day.reps, repMin: day.repMin, pace, wu: day.wu || 0, rest: restFor(day), atypical: !!day.atypical, note: day.note || null };
-    }
-    if (day.t === "race"){
-      return { ...base, distKm: day.dist, raceLabel: day.dist === 21.1 ? "Half Marathon" : `${day.dist}K`, wu: day.wu || 0 };
-    }
-    if (day.t === "prog"){
-      return { ...base, pace: mpPaceUnit(), wu: day.wu || 0, minutes: day.min, note: day.note || null };
-    }
-    if (day.t === "mp_distance"){
-      return { ...base, pace: mpPaceUnit(), distKm: day.distKm, distUnit: kmToUnit(day.distKm), wuEach: day.wuEach, note: day.note || null };
-    }
-    if (day.t === "mp_progression"){
-      const mp = mpPaceUnit();
-      const segments = day.segments.map(s => ({ minutes: s.min, pct: s.pct, pace: mp / (s.pct / 100) }));
-      return { ...base, pace: mp, wuEach: day.wuEach, segments, note: day.note || null };
-    }
-    if (day.t === "mp_reps"){
-      return { ...base, pace: mpPaceUnit(), reps: day.reps, repMin: day.repMin, wuEach: day.wuEach, restNote: day.restNote, note: day.note || null };
-    }
-    if (day.t === "marathon"){
-      return { ...base, distKm: day.dist };
-    }
-    return base;
   }
 
   function buildExportModel(){
@@ -648,79 +739,38 @@
       goalMarathonPace: fmtPace(mpPaceUnit()) + "/" + state.paceUnit,
       goalMpIsCustom: mpOverrideKm !== null,
       longRun: { startMin: parseFloat(longStartEl.value) || 60, capMin: longCapEl.value.trim() || null },
-      weeks: PLAN_WEEKS.map(week => {
-        const order = loadOrder(week.week);
-        const stats = computeWeekStats(week);
+      weeks: SCHEDULE.map((codes, wi) => {
+        const week = wi + 1;
+        const order = loadOrder(week);
+        const days = order.map(i => resolveDay(codes[i], DAYS[i], week));
+        const stats = computeWeekStats(days);
         return {
-          week: week.week,
+          week,
           volume: Math.round(stats.dist * 10) / 10,
           pctEasy: stats.pctEasy,
           pctSubt: stats.pctSubt,
-          days: order.map(i => resolveDay(week.days[i], week.week)),
+          days,
         };
       }),
     };
   }
 
   // warm-up/cool-down minutes count as easy-pace mileage & easy time, per the
-  // same treatment the source spreadsheet gives WU/CD
-  function computeWeekStats(week){
-    const pace = easyPaceUnit();
-    const mp = mpPaceUnit();
+  // book's own WU/CD treatment
+  function computeWeekStats(days){
     let easyMin = 0, subtMin = 0, dist = 0;
-
-    week.days.forEach(day => {
-      if (day.t === "easy"){
-        const minutes = day.longrun ? longRunMinutesFor(week.week) : day.min;
-        easyMin += minutes;
-        dist += distanceFor(minutes, pace);
-      } else if (day.t === "subt"){
-        const wu = day.wu || 0;
-        easyMin += wu;
-        dist += distanceFor(wu, pace);
-        const repTotal = day.reps * day.repMin;
-        subtMin += repTotal;
-        dist += distanceFor(repTotal, repPaceUnit(day.repMin, day.atypical));
-      } else if (day.t === "prog"){
-        const wu = day.wu || 0;
-        easyMin += wu;
-        dist += distanceFor(wu, pace);
-        subtMin += day.min;
-        dist += distanceFor(day.min, mp);
-      } else if (day.t === "mp_distance"){
-        easyMin += day.wuEach * 2;
-        dist += distanceFor(day.wuEach * 2, pace);
-        subtMin += (day.distKm * mp) / 60; // time it takes to cover distKm at MP
-        dist += kmToUnit(day.distKm);
-      } else if (day.t === "mp_progression"){
-        easyMin += day.wuEach * 2;
-        dist += distanceFor(day.wuEach * 2, pace);
-        const segMin = day.segments.reduce((s, x) => s + x.min, 0);
-        subtMin += segMin;
-        day.segments.forEach(s => dist += distanceFor(s.min, mp / (s.pct/100)));
-      } else if (day.t === "mp_reps"){
-        easyMin += day.wuEach * 2;
-        dist += distanceFor(day.wuEach * 2, pace);
-        const repTotal = day.reps * day.repMin;
-        subtMin += repTotal;
-        dist += distanceFor(repTotal, mp);
-      } else if (day.t === "race"){
-        const wu = day.wu || 0;
-        easyMin += wu;
-        dist += distanceFor(wu, pace);
-        dist += kmToUnit(day.dist);
-      } else if (day.t === "marathon"){
-        dist += kmToUnit(day.dist);
-      }
+    days.forEach(r => {
+      dist += r.distance || 0;
+      easyMin += r.easyMinutes || 0;
+      subtMin += r.subtMinutes || 0;
     });
-
     const totalMin = easyMin + subtMin;
     const pctSubt = totalMin ? Math.round((subtMin / totalMin) * 100) : 0;
     return { dist, pctSubt, pctEasy: 100 - pctSubt };
   }
 
-  function weekStatsHTML(week){
-    const { dist, pctSubt, pctEasy } = computeWeekStats(week);
+  function weekStatsHTML(days){
+    const { dist, pctSubt, pctEasy } = computeWeekStats(days);
     const unit = state.paceUnit;
     return `
       <div class="week-stats">
@@ -734,18 +784,19 @@
   }
 
   function renderWeeks(){
-    weeksEl.innerHTML = PLAN_WEEKS.map(week => {
-      const order = loadOrder(week.week);
-      const days = order.map(i => week.days[i]);
-      const hasRace = week.days.some(d => d.t === "race" || d.t === "marathon");
+    weeksEl.innerHTML = SCHEDULE.map((codes, wi) => {
+      const week = wi + 1;
+      const order = loadOrder(week);
+      const days = order.map(i => resolveDay(codes[i], DAYS[i], week));
+      const hasRace = codes.some(c => { const t = parseCode(c).type; return t === "race" || t === "marathon"; });
       return `
-        <div class="week-block" data-week="${week.week}">
+        <div class="week-block" data-week="${week}">
           <div class="week-head">
-            <h3 class="week-title">Week ${week.week}${hasRace ? " 🏁" : ""}</h3>
+            <h3 class="week-title">Week ${week}${hasRace ? " 🏁" : ""}</h3>
             <span class="week-hint">drag to reorder</span>
           </div>
-          ${weekStatsHTML(week)}
-          <div class="week-grid">${days.map(d => dayCardHTML(d, week.week)).join("")}</div>
+          ${weekStatsHTML(days)}
+          <div class="week-grid">${days.map(dayCardHTML).join("")}</div>
         </div>`;
     }).join("");
 
@@ -811,57 +862,48 @@
     downloadBlob("marathon-plan.json", JSON.stringify(model, null, 2), "application/json");
   }
 
-  // best-effort: known rest formats are "60s", "90s", "2:30", "3'-4'", "jog 4 min",
-  // "~60s jog (estimated)" - not all sourced with equal confidence, see nsm_marathon_plan.md
-  function restToSeconds(restStr){
-    if (!restStr) return 60;
-    let m;
-    if ((m = restStr.match(/(\d+):(\d{2})/))) return (+m[1]) * 60 + (+m[2]);
-    if ((m = restStr.match(/(\d+)'-(\d+)'/))) return ((+m[1] + +m[2]) / 2) * 60;
-    if ((m = restStr.match(/(\d+)\s*min/))) return (+m[1]) * 60;
-    if ((m = restStr.match(/(\d+)\s*s\b/))) return +m[1];
-    return 60;
-  }
-
   function paceStr(sec){ return fmtPace(sec) + "/" + state.paceUnit; }
+  function icuPaceStr(sec){ return paceStr(sec) + " Pace"; }
 
-  // renders one resolved day as an intervals.icu plain-text workout description
+  // renders one resolved day as an intervals.icu plain-text workout description,
+  // matching the exact section formats intervals.icu expects (Warmup/Main Set/
+  // Cooldown, "Nx" repeat headers, "intensity=rest" tags)
   function icuWorkoutText(r){
-    const easy = paceStr(easyPaceUnit());
-    const lines = [];
+    const easy = icuPaceStr(easyPaceUnit());
 
     if (r.type === "easy"){
-      lines.push(`- ${r.minutes}m ${paceStr(r.pace)}`);
-    } else if (r.type === "subt"){
-      if (r.wu) lines.push(`- ${r.wu}m ${easy}`, "");
-      lines.push(`Main Set ${r.reps}x`);
-      lines.push(`- ${r.repMin}m ${paceStr(r.pace)}`);
-      if (r.reps > 1) lines.push(`- ${restToSeconds(r.rest)}s ${easy} intensity=rest`);
-      if (r.wu) lines.push("", `- ${r.wu}m ${easy}`);
-    } else if (r.type === "race"){
-      lines.push(`# ${r.raceLabel} — race effort, no fixed pace target`);
-    } else if (r.type === "prog"){
-      if (r.wu) lines.push(`- ${r.wu}m ${easy}`, "");
-      lines.push("Main Set", `- ${r.minutes}m ${paceStr(r.pace)}`, "# progressive, ramping to goal MP, no rest breaks");
-    } else if (r.type === "mp_distance"){
-      if (r.wuEach) lines.push(`- ${r.wuEach}m ${easy}`, "");
-      lines.push("Main Set", `- ${r.distUnit.toFixed(1)}${state.paceUnit} ${paceStr(r.pace)}`);
-      if (r.wuEach) lines.push("", `- ${r.wuEach}m ${easy}`);
-    } else if (r.type === "mp_progression"){
-      if (r.wuEach) lines.push(`- ${r.wuEach}m ${easy}`, "");
-      lines.push("Main Set");
-      r.segments.forEach(s => lines.push(`- ${s.minutes}m ${paceStr(s.pace)} # ${s.pct}% MP`));
-      if (r.wuEach) lines.push("", `- ${r.wuEach}m ${easy}`);
-    } else if (r.type === "mp_reps"){
-      if (r.wuEach) lines.push(`- ${r.wuEach}m ${easy}`, "");
-      lines.push(`Main Set ${r.reps}x`);
-      lines.push(`- ${r.repMin}m ${paceStr(r.pace)}`);
-      lines.push(`- ${restToSeconds(r.restNote)}s ${easy} intensity=rest`);
-      if (r.wuEach) lines.push("", `- ${r.wuEach}m ${easy}`);
-    } else if (r.type === "marathon"){
-      lines.push(`# MARATHON — ${r.distKm}km, race day`);
+      return `Easy\n- ${r.minutes}m ${icuPaceStr(r.pace)}`;
     }
-    return lines.join("\n");
+    if (r.type === "subt"){
+      const lines = [];
+      if (r.wu) lines.push("Warmup", `- ${r.wu}m ${easy}`, "");
+      lines.push(`Main Set ${r.reps}x`, `- ${r.repMin}m ${icuPaceStr(r.pace)}`);
+      if (r.rest) lines.push(`- ${r.rest} intensity=rest`);
+      if (r.wu) lines.push("", "Cooldown", `- ${r.wu}m ${easy}`);
+      return lines.join("\n");
+    }
+    if (r.type === "mp_distance"){ // Atypical 1
+      return ["Warmup", `- ${r.wu}m ${easy}`, "", "1x", `- ${r.distUnit.toFixed(1)}${state.paceUnit} ${icuPaceStr(r.pace)}`, "", "Cooldown", `- ${r.cd}m ${easy}`].join("\n");
+    }
+    if (r.type === "mp_progression"){ // Atypical 2
+      const lines = ["Warmup", `- ${r.wu}m ${easy}`, "", "1x"];
+      r.segments.forEach(s => lines.push(`- ${s.minutes}m ${icuPaceStr(s.pace)}`));
+      lines.push("", "Cooldown", `- ${r.cd}m ${easy}`);
+      return lines.join("\n");
+    }
+    if (r.type === "mp_reps"){ // Atypical 3
+      const lines = ["Warmup", `- ${r.wu}m ${easy}`, "", `${r.reps}x`, `- ${r.repMin}m ${icuPaceStr(r.pace)}`];
+      if (r.rest) lines.push(`- ${r.rest} intensity=rest`);
+      lines.push("", "Cooldown", `- ${r.cd}m ${easy}`);
+      return lines.join("\n");
+    }
+    if (r.type === "race"){
+      return `# ${r.raceLabel} — race effort, no fixed pace target`;
+    }
+    if (r.type === "marathon"){
+      return `# MARATHON — ${r.distKm}km, race day`;
+    }
+    return "";
   }
 
   function downloadIcuText(){
@@ -891,8 +933,8 @@
     const ws = wb.addWorksheet("Marathon Plan");
     const TYPE_COLORS = {
       easy: "FFE8F0DC", subt: "FFDCEEE6", race: "FFFBE0E0",
-      prog: "FFFBF1D6", mp_distance: "FFFBF1D6", mp_progression: "FFFBF1D6",
-      mp_reps: "FFFBF1D6", marathon: "FFFBE0E0",
+      mp_distance: "FFFBF1D6", mp_progression: "FFFBF1D6",
+      mp_reps: "FFFBF1D6", marathon: "FFFBE0E0", unknown: "FFF0F0F0",
     };
 
     ws.columns = [
@@ -902,7 +944,7 @@
       { header: "Pace / Main", key: "main", width: 16 },
       { header: "Structure", key: "structure", width: 40 },
       { header: "Distance", key: "distance", width: 12 },
-      { header: "Notes", key: "notes", width: 40 },
+      { header: "Notes", key: "notes", width: 30 },
     ];
     ws.getRow(1).eachCell(c => {
       c.font = { bold: true, color: { argb: "FFFFFFFF" } };
@@ -913,27 +955,29 @@
 
     model.weeks.forEach(week => {
       week.days.forEach(d => {
-        let main = "", structure = "", distance = "", notes = d.note || "";
+        let main = "", structure = "", notes = "";
+        const distance = `${d.distance.toFixed(1)} ${d.unit}`;
         if (d.type === "easy"){
-          main = paceStr(d.pace); structure = `${d.minutes} min easy`; distance = `${d.distance.toFixed(1)} ${d.unit}`;
-          if (d.longrun) notes = ["long run", notes].filter(Boolean).join(" · ");
+          main = paceStr(d.pace); structure = `${d.minutes} min easy`;
+          if (d.longrun) notes = "long run";
+          if (d.fixedDistance) notes = ["fixed distance", notes].filter(Boolean).join(" · ");
         } else if (d.type === "subt"){
           main = paceStr(d.pace);
-          structure = `${d.reps}×${d.repMin}'${d.rest ? `, rest ${d.rest}` : ""}${d.wu ? `, ${d.wu}min WU/CD` : ""}`;
-          if (d.atypical) notes = ["101% of 3×10' pace", notes].filter(Boolean).join(" · ");
+          structure = `${d.reps}×${d.repMin}'${d.rest ? `, rest ${d.rest}` : ""}${d.wu ? `, ${d.wu}min WU/CD each side` : ""}`;
+          if (d.isAtypicalPace) notes = "101% of goal MP";
         } else if (d.type === "race"){
           main = d.raceLabel; structure = "Race effort";
-        } else if (d.type === "prog"){
-          main = paceStr(d.pace); structure = `${d.minutes} min core, ramping to goal MP${d.wu ? `, ${d.wu}min WU/CD` : ""}`;
         } else if (d.type === "mp_distance"){
-          main = paceStr(d.pace); structure = `${d.distUnit.toFixed(1)} ${d.unit} at goal MP, ${d.wuEach}min WU + ${d.wuEach}min CD`;
+          main = paceStr(d.pace); structure = `${d.distUnit.toFixed(1)} ${d.unit} at goal MP, ${d.wu}min WU + ${d.cd}min CD`;
         } else if (d.type === "mp_progression"){
           main = paceStr(d.pace) + " MP";
-          structure = d.segments.map(s => `${s.minutes}min@${s.pct}%`).join(" → ") + `, ${d.wuEach}min WU/CD each side`;
+          structure = d.segments.map(s => `${s.minutes}min@${s.pct}%`).join(" → ") + `, ${d.wu}min WU + ${d.cd}min CD`;
         } else if (d.type === "mp_reps"){
-          main = paceStr(d.pace); structure = `${d.reps}×${d.repMin}' at goal MP, rest ${d.restNote}, ${d.wuEach}min WU/CD each side`;
+          main = paceStr(d.pace); structure = `${d.reps}×${d.repMin}' at goal MP, rest ${d.rest}, ${d.wu}min WU + ${d.cd}min CD`;
         } else if (d.type === "marathon"){
           main = "MARATHON"; structure = `${d.distKm} km race day`;
+        } else {
+          main = d.raw || "?";
         }
         const row = ws.addRow({ week: week.week, day: d.day, type: d.label, main, structure, distance, notes });
         row.eachCell(c => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: TYPE_COLORS[d.type] || "FFFFFFFF" } }; });
