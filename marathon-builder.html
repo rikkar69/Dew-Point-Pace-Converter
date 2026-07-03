@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/exceljs@4/dist/exceljs.min.js" defer></script>
 <style>
   :root,
   [data-theme="dark"]{
@@ -164,6 +165,19 @@
     border:1px solid color-mix(in srgb, var(--s4) 45%, var(--field));
     color:var(--s4);
   }
+  .status.ok{
+    background:color-mix(in srgb, var(--s0) 16%, var(--field));
+    border:1px solid color-mix(in srgb, var(--s0) 45%, var(--field));
+    color:var(--s0);
+  }
+
+  .ghost{
+    border:1px solid var(--line);background:var(--field);cursor:pointer;
+    font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;color:var(--ink);
+    padding:10px 14px;border-radius:9px;transition:background .15s ease;
+  }
+  .ghost:hover{background:var(--paper-2)}
+  .export-row{display:flex;gap:10px;flex-wrap:wrap}
 
   /* ---- weeks ---- */
   #weeks{margin-top:8px}
@@ -275,6 +289,40 @@
   </div>
 
   <div id="result" aria-live="polite"></div>
+
+  <div id="export-card" class="card" hidden>
+    <div class="row">
+      <label style="margin:0 0 10px">Export this build</label>
+      <div class="export-row">
+        <button type="button" id="export-json" class="ghost">Download JSON</button>
+        <button type="button" id="export-xlsx" class="ghost">Download Excel</button>
+        <button type="button" id="export-icu-text" class="ghost">Download intervals.icu text</button>
+      </div>
+      <div id="export-status"></div>
+    </div>
+
+    <div id="icu-push-section">
+      <p class="field-hint" style="margin:0 0 12px">⚠ Experimental — untested against a real intervals.icu account. Try it with your own key before trusting it; the "Download intervals.icu text" option above is the safer, verified path.</p>
+      <div class="row">
+        <label for="icu-api-key">intervals.icu API key</label>
+        <input id="icu-api-key" type="text" inputmode="text" placeholder="paste your personal API key" autocomplete="off">
+        <p class="field-hint">Stored only in this browser. Sent directly to intervals.icu when you push — never anywhere else. Find yours in intervals.icu under Settings → Developer Settings.</p>
+      </div>
+      <div class="two-col">
+        <div>
+          <label for="icu-athlete-id">Athlete ID</label>
+          <input id="icu-athlete-id" type="text" inputmode="text" placeholder="0 (you)">
+        </div>
+        <div>
+          <label for="icu-start-date">Plan start date</label>
+          <input id="icu-start-date" type="date">
+        </div>
+      </div>
+      <button type="button" id="icu-push" class="go" style="margin-top:16px">Push to intervals.icu</button>
+      <div id="icu-push-status"></div>
+    </div>
+  </div>
+
   <div id="weeks"></div>
 
   <footer>
@@ -549,6 +597,68 @@
       </div>`;
   }
 
+  // structured (non-HTML) resolution of a day, for the JSON/Excel/intervals.icu
+  // exports - uses the exact same pace functions as dayCardHTML so exports never
+  // drift from what's shown on the cards
+  function resolveDay(day, weekNum){
+    const unit = state.paceUnit;
+    const label = TYPE_META[day.t].label;
+    const base = { day: day.day, type: day.t, label, unit };
+
+    if (day.t === "easy"){
+      const pace = easyPaceUnit();
+      const minutes = day.longrun ? longRunMinutesFor(weekNum) : day.min;
+      return { ...base, minutes: Math.round(minutes), pace, distance: distanceFor(minutes, pace), longrun: !!day.longrun };
+    }
+    if (day.t === "subt"){
+      const pace = repPaceUnit(day.repMin, day.atypical);
+      return { ...base, reps: day.reps, repMin: day.repMin, pace, wu: day.wu || 0, rest: restFor(day), atypical: !!day.atypical, note: day.note || null };
+    }
+    if (day.t === "race"){
+      return { ...base, distKm: day.dist, raceLabel: day.dist === 21.1 ? "Half Marathon" : `${day.dist}K`, wu: day.wu || 0 };
+    }
+    if (day.t === "prog"){
+      return { ...base, pace: mpPaceUnit(), wu: day.wu || 0, minutes: day.min, note: day.note || null };
+    }
+    if (day.t === "mp_distance"){
+      return { ...base, pace: mpPaceUnit(), distKm: day.distKm, distUnit: kmToUnit(day.distKm), wuEach: day.wuEach, note: day.note || null };
+    }
+    if (day.t === "mp_progression"){
+      const mp = mpPaceUnit();
+      const segments = day.segments.map(s => ({ minutes: s.min, pct: s.pct, pace: mp / (s.pct / 100) }));
+      return { ...base, pace: mp, wuEach: day.wuEach, segments, note: day.note || null };
+    }
+    if (day.t === "mp_reps"){
+      return { ...base, pace: mpPaceUnit(), reps: day.reps, repMin: day.repMin, wuEach: day.wuEach, restNote: day.restNote, note: day.note || null };
+    }
+    if (day.t === "marathon"){
+      return { ...base, distKm: day.dist };
+    }
+    return base;
+  }
+
+  function buildExportModel(){
+    return {
+      generatedAt: new Date().toISOString(),
+      fiveKTime: fkStr(),
+      paceUnit: state.paceUnit,
+      goalMarathonPace: fmtPace(mpPaceUnit()) + "/" + state.paceUnit,
+      goalMpIsCustom: mpOverrideKm !== null,
+      longRun: { startMin: parseFloat(longStartEl.value) || 60, capMin: longCapEl.value.trim() || null },
+      weeks: PLAN_WEEKS.map(week => {
+        const order = loadOrder(week.week);
+        const stats = computeWeekStats(week);
+        return {
+          week: week.week,
+          volume: Math.round(stats.dist * 10) / 10,
+          pctEasy: stats.pctEasy,
+          pctSubt: stats.pctSubt,
+          days: order.map(i => resolveDay(week.days[i], week.week)),
+        };
+      }),
+    };
+  }
+
   // warm-up/cool-down minutes count as easy-pace mileage & easy time, per the
   // same treatment the source spreadsheet gives WU/CD
   function computeWeekStats(week){
@@ -681,14 +791,226 @@
     mpHintEl.textContent = `${label}: ${fmtPace(mpPaceUnit())} / ${state.paceUnit}. Clear the field to auto-estimate.`;
   }
 
+  // ---- exports ----
+  const exportCardEl = $("#export-card");
+
+  function downloadBlob(filename, content, mime){
+    const blob = new Blob([content], { type: mime });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = filename;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function downloadJSON(){
+    const model = buildExportModel();
+    downloadBlob("marathon-plan.json", JSON.stringify(model, null, 2), "application/json");
+  }
+
+  // best-effort: known rest formats are "60s", "90s", "2:30", "3'-4'", "jog 4 min",
+  // "~60s jog (estimated)" - not all sourced with equal confidence, see nsm_marathon_plan.md
+  function restToSeconds(restStr){
+    if (!restStr) return 60;
+    let m;
+    if ((m = restStr.match(/(\d+):(\d{2})/))) return (+m[1]) * 60 + (+m[2]);
+    if ((m = restStr.match(/(\d+)'-(\d+)'/))) return ((+m[1] + +m[2]) / 2) * 60;
+    if ((m = restStr.match(/(\d+)\s*min/))) return (+m[1]) * 60;
+    if ((m = restStr.match(/(\d+)\s*s\b/))) return +m[1];
+    return 60;
+  }
+
+  function paceStr(sec){ return fmtPace(sec) + "/" + state.paceUnit; }
+
+  // renders one resolved day as an intervals.icu plain-text workout description
+  function icuWorkoutText(r){
+    const easy = paceStr(easyPaceUnit());
+    const lines = [];
+
+    if (r.type === "easy"){
+      lines.push(`- ${r.minutes}m ${paceStr(r.pace)}`);
+    } else if (r.type === "subt"){
+      if (r.wu) lines.push(`- ${r.wu}m ${easy}`, "");
+      lines.push(`Main Set ${r.reps}x`);
+      lines.push(`- ${r.repMin}m ${paceStr(r.pace)}`);
+      if (r.reps > 1) lines.push(`- ${restToSeconds(r.rest)}s ${easy} intensity=rest`);
+      if (r.wu) lines.push("", `- ${r.wu}m ${easy}`);
+    } else if (r.type === "race"){
+      lines.push(`# ${r.raceLabel} — race effort, no fixed pace target`);
+    } else if (r.type === "prog"){
+      if (r.wu) lines.push(`- ${r.wu}m ${easy}`, "");
+      lines.push("Main Set", `- ${r.minutes}m ${paceStr(r.pace)}`, "# progressive, ramping to goal MP, no rest breaks");
+    } else if (r.type === "mp_distance"){
+      if (r.wuEach) lines.push(`- ${r.wuEach}m ${easy}`, "");
+      lines.push("Main Set", `- ${r.distUnit.toFixed(1)}${state.paceUnit} ${paceStr(r.pace)}`);
+      if (r.wuEach) lines.push("", `- ${r.wuEach}m ${easy}`);
+    } else if (r.type === "mp_progression"){
+      if (r.wuEach) lines.push(`- ${r.wuEach}m ${easy}`, "");
+      lines.push("Main Set");
+      r.segments.forEach(s => lines.push(`- ${s.minutes}m ${paceStr(s.pace)} # ${s.pct}% MP`));
+      if (r.wuEach) lines.push("", `- ${r.wuEach}m ${easy}`);
+    } else if (r.type === "mp_reps"){
+      if (r.wuEach) lines.push(`- ${r.wuEach}m ${easy}`, "");
+      lines.push(`Main Set ${r.reps}x`);
+      lines.push(`- ${r.repMin}m ${paceStr(r.pace)}`);
+      lines.push(`- ${restToSeconds(r.restNote)}s ${easy} intensity=rest`);
+      if (r.wuEach) lines.push("", `- ${r.wuEach}m ${easy}`);
+    } else if (r.type === "marathon"){
+      lines.push(`# MARATHON — ${r.distKm}km, race day`);
+    }
+    return lines.join("\n");
+  }
+
+  function downloadIcuText(){
+    const model = buildExportModel();
+    const parts = [
+      "NSM Marathon Plan — intervals.icu workout text export",
+      "Paste each block below into intervals.icu's Workout Builder as its own workout.",
+      "Paces are absolute; rest/interval timings on prose-derived sessions (progressive and",
+      "goal-MP days) are best-effort estimates — review before relying on them.",
+      "=".repeat(70),
+    ];
+    model.weeks.forEach(week => {
+      week.days.forEach(d => {
+        parts.push("", `WEEK ${week.week} — ${d.day.toUpperCase()} (${d.label})`, icuWorkoutText(d));
+      });
+    });
+    downloadBlob("marathon-plan-intervals-icu.txt", parts.join("\n"), "text/plain");
+  }
+
+  async function downloadExcel(){
+    if (typeof ExcelJS === "undefined"){
+      exportStatus("Excel library still loading — try again in a moment.", false);
+      return;
+    }
+    const model = buildExportModel();
+    const wb = new ExcelJS.Workbook();
+    const ws = wb.addWorksheet("Marathon Plan");
+    const TYPE_COLORS = {
+      easy: "FFE8F0DC", subt: "FFDCEEE6", race: "FFFBE0E0",
+      prog: "FFFBF1D6", mp_distance: "FFFBF1D6", mp_progression: "FFFBF1D6",
+      mp_reps: "FFFBF1D6", marathon: "FFFBE0E0",
+    };
+
+    ws.columns = [
+      { header: "Week", key: "week", width: 8 },
+      { header: "Day", key: "day", width: 8 },
+      { header: "Type", key: "type", width: 14 },
+      { header: "Pace / Main", key: "main", width: 16 },
+      { header: "Structure", key: "structure", width: 40 },
+      { header: "Distance", key: "distance", width: 12 },
+      { header: "Notes", key: "notes", width: 40 },
+    ];
+    ws.getRow(1).eachCell(c => {
+      c.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF2D353B" } };
+      c.alignment = { vertical: "middle" };
+    });
+    ws.views = [{ state: "frozen", ySplit: 1 }];
+
+    model.weeks.forEach(week => {
+      week.days.forEach(d => {
+        let main = "", structure = "", distance = "", notes = d.note || "";
+        if (d.type === "easy"){
+          main = paceStr(d.pace); structure = `${d.minutes} min easy`; distance = `${d.distance.toFixed(1)} ${d.unit}`;
+          if (d.longrun) notes = ["long run", notes].filter(Boolean).join(" · ");
+        } else if (d.type === "subt"){
+          main = paceStr(d.pace);
+          structure = `${d.reps}×${d.repMin}'${d.rest ? `, rest ${d.rest}` : ""}${d.wu ? `, ${d.wu}min WU/CD` : ""}`;
+          if (d.atypical) notes = ["101% of 3×10' pace", notes].filter(Boolean).join(" · ");
+        } else if (d.type === "race"){
+          main = d.raceLabel; structure = "Race effort";
+        } else if (d.type === "prog"){
+          main = paceStr(d.pace); structure = `${d.minutes} min core, ramping to goal MP${d.wu ? `, ${d.wu}min WU/CD` : ""}`;
+        } else if (d.type === "mp_distance"){
+          main = paceStr(d.pace); structure = `${d.distUnit.toFixed(1)} ${d.unit} at goal MP, ${d.wuEach}min WU + ${d.wuEach}min CD`;
+        } else if (d.type === "mp_progression"){
+          main = paceStr(d.pace) + " MP";
+          structure = d.segments.map(s => `${s.minutes}min@${s.pct}%`).join(" → ") + `, ${d.wuEach}min WU/CD each side`;
+        } else if (d.type === "mp_reps"){
+          main = paceStr(d.pace); structure = `${d.reps}×${d.repMin}' at goal MP, rest ${d.restNote}, ${d.wuEach}min WU/CD each side`;
+        } else if (d.type === "marathon"){
+          main = "MARATHON"; structure = `${d.distKm} km race day`;
+        }
+        const row = ws.addRow({ week: week.week, day: d.day, type: d.label, main, structure, distance, notes });
+        row.eachCell(c => { c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: TYPE_COLORS[d.type] || "FFFFFFFF" } }; });
+      });
+    });
+
+    const buf = await wb.xlsx.writeBuffer();
+    downloadBlob("marathon-plan.xlsx", buf, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+  }
+
+  function setStatus(elSel, msg, ok){
+    $(elSel).innerHTML = `<div class="status${ok ? " ok" : ""}" role="alert">${escapeHtml(msg)}</div>`;
+  }
+  function icuStatus(msg, ok){ setStatus("#icu-push-status", msg, ok); }
+  function exportStatus(msg, ok){ setStatus("#export-status", msg, ok); }
+
+  async function pushToIntervals(){
+    const key = $("#icu-api-key").value.trim();
+    const athleteId = $("#icu-athlete-id").value.trim() || "0";
+    const startDate = $("#icu-start-date").value;
+    if (!key) return icuStatus("Enter your intervals.icu API key first.", false);
+    if (!startDate) return icuStatus("Pick a plan start date first.", false);
+
+    const model = buildExportModel();
+    const events = [];
+    let cursor = new Date(startDate + "T00:00:00");
+    const DAY_INDEX = { Mon:0, Tue:1, Wed:2, Thu:3, Fri:4, Sat:5, Sun:6 };
+    model.weeks.forEach((week, wi) => {
+      week.days.forEach(d => {
+        const date = new Date(cursor);
+        date.setDate(date.getDate() + wi * 7 + DAY_INDEX[d.day]);
+        events.push({
+          category: "WORKOUT",
+          start_date_local: date.toISOString().slice(0, 10) + "T00:00:00",
+          type: "Run",
+          name: `Week ${week.week} ${d.day} — ${d.label}`,
+          description: icuWorkoutText(d),
+        });
+      });
+    });
+
+    const pushBtn = $("#icu-push");
+    pushBtn.disabled = true;
+    icuStatus("Pushing…", true);
+    try {
+      const res = await fetch(`https://intervals.icu/api/v1/athlete/${encodeURIComponent(athleteId)}/events/bulk?upsert=true`, {
+        method: "POST",
+        headers: {
+          "Authorization": "Basic " + btoa("API_KEY:" + key),
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(events),
+      });
+      if (!res.ok){
+        const text = await res.text().catch(() => "");
+        icuStatus(`intervals.icu returned an error (${res.status}). ${text.slice(0, 200)}`, false);
+      } else {
+        icuStatus(`Pushed ${events.length} workouts to intervals.icu starting ${startDate}.`, true);
+      }
+    } catch (err){
+      icuStatus("Couldn't reach intervals.icu — check your connection and try again.", false);
+    } finally {
+      pushBtn.disabled = false;
+    }
+  }
+
+  $("#export-json").addEventListener("click", downloadJSON);
+  $("#export-xlsx").addEventListener("click", downloadExcel);
+  $("#export-icu-text").addEventListener("click", downloadIcuText);
+  $("#icu-push").addEventListener("click", pushToIntervals);
+
   function run(){
     const T = parseTime(fkStr());
-    if (T === null){ showError("pace"); weeksEl.innerHTML = ""; return; }
+    if (T === null){ showError("pace"); weeksEl.innerHTML = ""; exportCardEl.hidden = true; return; }
     store.set("mb_fk", fkStr());
     resultEl.innerHTML = "";
     fiveKSec = T;
     updateMpHint();
     renderWeeks();
+    exportCardEl.hidden = false;
   }
 
   goEl.addEventListener("click", run);
