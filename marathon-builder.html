@@ -112,6 +112,15 @@
   .row{margin-bottom:16px}
   .row:last-child{margin-bottom:0}
 
+  input[type=text]{
+    width:100%;font-family:"DM Mono",monospace;font-size:16px;
+    padding:11px 12px;border:1px solid var(--line);border-radius:10px;
+    background:var(--paper);color:var(--ink);
+  }
+  input[type=text]::placeholder{color:var(--ink-soft);opacity:.6}
+  .field-hint{font-size:12px;color:var(--ink-soft);margin:6px 0 0}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
   .pace-time{
     width:100%;display:flex;align-items:center;gap:4px;
     border:1px solid var(--line);border-radius:10px;background:var(--paper);
@@ -238,6 +247,30 @@
       </div>
     </div>
 
+    <div class="row">
+      <label for="mp-min">Goal marathon pace (optional)</label>
+      <div class="pace-time">
+        <input id="mp-min" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="—" aria-label="Goal MP minutes">
+        <span class="colon" aria-hidden="true">:</span>
+        <input id="mp-sec" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="2" placeholder="—" aria-label="Goal MP seconds">
+      </div>
+      <p class="field-hint" id="mp-hint">Leave blank to auto-estimate from your 5K time.</p>
+    </div>
+
+    <div class="row">
+      <div class="two-col">
+        <div>
+          <label for="long-start">Starting long run (min)</label>
+          <input id="long-start" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="60">
+        </div>
+        <div>
+          <label for="long-cap">Peak long run cap (min)</label>
+          <input id="long-cap" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="3" placeholder="180">
+        </div>
+      </div>
+      <p class="field-hint">180 min is a commonly recommended cap, but override it if you'd like. The cap applies at week 11 and steps down 5 min/week for earlier weeks, floored at your starting minutes.</p>
+    </div>
+
     <button id="go" class="go">Build my plan</button>
   </div>
 
@@ -283,32 +316,67 @@
   });
 
   // ---- reconciled 15-week plan data (see nsm_marathon_plan.md for provenance) ----
-  const PLAN_WEEKS = [{"week":1,"origLabel":"WEEK 2","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":112.0}]},{"week":2,"origLabel":"WEEK 3","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":4,"repMin":9},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":117.0}]},{"week":3,"origLabel":"WEEK 4","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":120.0}]},{"week":4,"origLabel":"WEEK 5","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":125.0}]},{"week":5,"origLabel":"WEEK 6","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"race","wu":25.0,"dist":5,"label":"5K RACE"},{"day":"Sun","t":"easy","min":130.0}]},{"week":6,"origLabel":"WEEK 7","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'"},{"day":"Wed","t":"easy","min":75.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Sun","t":"easy","min":130.0}]},{"week":7,"origLabel":"WEEK 8","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'"},{"day":"Sun","t":"easy","min":135.0}]},{"week":8,"origLabel":"WEEK 9","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":80.0},{"day":"Thu","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":4,"repMin":15,"restNote":"3'-4'"},{"day":"Sun","t":"easy","min":90.0}]},{"week":9,"origLabel":"WEEK 10","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'"},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":141.0}]},{"week":10,"origLabel":"WEEK 11","days":[{"day":"Mon","t":"easy","min":75.0},{"day":"Tue","t":"subt","wu":25.0,"reps":4,"repMin":9},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"easy","min":45.0},{"day":"Sun","t":"race","wu":25.0,"dist":10,"label":"10K RACE"}]},{"week":11,"origLabel":"WEEK 12","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":4,"repMin":9},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'"},{"day":"Sun","t":"easy","min":141.0}]},{"week":12,"origLabel":"WEEK 13","days":[{"day":"Mon","t":"easy","min":75.0},{"day":"Tue","t":"subt","wu":25.0,"reps":5,"repMin":6},{"day":"Wed","t":"easy","min":75.0},{"day":"Thu","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"easy","min":40.0},{"day":"Sun","t":"race","wu":15.0,"dist":21.1,"label":"HM RACE"}]},{"week":13,"origLabel":"WEEK 14","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"prog","wu":0,"min":75,"note":"Progressive, ramping toward marathon pace (~3x25' bands, no rest breaks)"},{"day":"Wed","t":"easy","min":90.0},{"day":"Thu","t":"easy","min":60.0},{"day":"Fri","t":"subt","wu":25.0,"reps":5,"repMin":15,"restNote":"2:30"},{"day":"Sat","t":"easy","min":45.0},{"day":"Sun","t":"longtempo","wu":75,"min":30,"note":"Medium-long run with 30 min at MP effort embedded in the middle"}]},{"week":14,"origLabel":"WEEK 15","days":[{"day":"Mon","t":"easy","min":45.0},{"day":"Tue","t":"prog","wu":30,"min":45,"note":"Progressive, ramping toward marathon pace, no rest breaks"},{"day":"Wed","t":"easy","min":45.0},{"day":"Thu","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"easy","min":45.0},{"day":"Sun","t":"subt","wu":75,"reps":3,"repMin":9,"restNote":"jog 4 min","note":"Embedded in a medium-long run"}]},{"week":15,"origLabel":"RACE WEEK","days":[{"day":"Mon","t":"easy","min":45.0},{"day":"Tue","t":"subt","wu":30.0,"reps":1,"repMin":15},{"day":"Wed","t":"easy","min":45.0},{"day":"Thu","t":"subt","wu":30.0,"reps":1,"repMin":15},{"day":"Fri","t":"easy","min":40.0},{"day":"Sat","t":"easy","min":15.0},{"day":"Sun","t":"marathon","dist":42.2}]}];
+  const PLAN_WEEKS = [{"week":1,"origLabel":"WEEK 2","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":112.0,"longrun":true}]},{"week":2,"origLabel":"WEEK 3","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":4,"repMin":9},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":117.0,"longrun":true}]},{"week":3,"origLabel":"WEEK 4","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":120.0,"longrun":true}]},{"week":4,"origLabel":"WEEK 5","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":125.0,"longrun":true}]},{"week":5,"origLabel":"WEEK 6","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'","atypical":true},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"race","wu":25.0,"dist":5,"label":"5K RACE"},{"day":"Sun","t":"easy","min":130.0,"longrun":true}]},{"week":6,"origLabel":"WEEK 7","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'"},{"day":"Wed","t":"easy","min":75.0},{"day":"Thu","t":"subt","wu":25.0,"reps":6,"repMin":5},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Sun","t":"easy","min":130.0,"longrun":true}]},{"week":7,"origLabel":"WEEK 8","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'","atypical":true},{"day":"Sun","t":"easy","min":135.0,"longrun":true}]},{"week":8,"origLabel":"WEEK 9","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":80.0},{"day":"Thu","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":4,"repMin":15,"restNote":"3'-4'","atypical":true},{"day":"Sun","t":"easy","min":90.0,"longrun":true}]},{"week":9,"origLabel":"WEEK 10","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":3,"repMin":10},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'","atypical":true},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Sun","t":"easy","min":141.0,"longrun":true}]},{"week":10,"origLabel":"WEEK 11","days":[{"day":"Mon","t":"easy","min":75.0},{"day":"Tue","t":"subt","wu":25.0,"reps":4,"repMin":9},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"easy","min":45.0},{"day":"Sun","t":"race","wu":25.0,"dist":10,"label":"10K RACE"}]},{"week":11,"origLabel":"WEEK 12","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"subt","wu":25.0,"reps":4,"repMin":9},{"day":"Wed","t":"easy","min":60.0},{"day":"Thu","t":"subt","wu":25.0,"reps":10,"repMin":3},{"day":"Fri","t":"easy","min":45.0},{"day":"Sat","t":"subt","wu":25.0,"reps":3,"repMin":15,"restNote":"3'-4'","atypical":true},{"day":"Sun","t":"easy","min":141.0,"longrun":true}]},{"week":12,"origLabel":"WEEK 13","days":[{"day":"Mon","t":"easy","min":75.0},{"day":"Tue","t":"subt","wu":25.0,"reps":5,"repMin":6},{"day":"Wed","t":"easy","min":75.0},{"day":"Thu","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"easy","min":40.0},{"day":"Sun","t":"race","wu":15.0,"dist":21.1,"label":"HM RACE"}]},{"week":13,"origLabel":"WEEK 14","days":[{"day":"Mon","t":"easy","min":60.0},{"day":"Tue","t":"prog","wu":0,"min":75,"note":"Progressive, ramping toward marathon pace (~3x25' bands, no rest breaks)"},{"day":"Wed","t":"easy","min":90.0},{"day":"Thu","t":"easy","min":60.0},{"day":"Fri","t":"subt","wu":25.0,"reps":5,"repMin":15,"restNote":"2:30","atypical":true},{"day":"Sat","t":"easy","min":45.0},{"day":"Sun","t":"mp_distance","wuEach":25,"distKm":10,"note":"10K (6.2mi) at goal marathon pace"}]},{"week":14,"origLabel":"WEEK 15","days":[{"day":"Mon","t":"easy","min":45.0},{"day":"Tue","t":"mp_progression","wuEach":10,"segments":[{"min":25,"pct":92},{"min":25,"pct":93},{"min":25,"pct":100}],"note":"Progressive, no rest between segments"},{"day":"Wed","t":"easy","min":45.0},{"day":"Thu","t":"subt","wu":25.0,"reps":8,"repMin":3},{"day":"Fri","t":"easy","min":60.0},{"day":"Sat","t":"easy","min":45.0},{"day":"Sun","t":"mp_reps","wuEach":30,"reps":3,"repMin":10,"restNote":"~60s jog (estimated)","note":"Embedded in a medium-long run"}]},{"week":15,"origLabel":"RACE WEEK","days":[{"day":"Mon","t":"easy","min":45.0},{"day":"Tue","t":"subt","wu":30.0,"reps":1,"repMin":15},{"day":"Wed","t":"easy","min":45.0},{"day":"Thu","t":"subt","wu":30.0,"reps":1,"repMin":15},{"day":"Fri","t":"easy","min":40.0},{"day":"Sat","t":"easy","min":15.0},{"day":"Sun","t":"marathon","dist":42.2}]}];
 
   // ---- state ----
   const state = { paceUnit: store.get("mb_paceUnit") || "mi" };
-  let zones = null; // computed pace zones once a 5K time is submitted
+  let fiveKSec = null;       // parsed 5K time, once submitted
+  let mpOverrideKm = null;   // user-entered goal MP, canonical sec/km, or null to auto-estimate
 
   // ---- DOM refs ----
   const $ = sel => document.querySelector(sel);
   const fkMinEl = $("#fk-min");
   const fkSecEl = $("#fk-sec");
+  const mpMinEl = $("#mp-min");
+  const mpSecEl = $("#mp-sec");
+  const mpHintEl = $("#mp-hint");
+  const longStartEl = $("#long-start");
+  const longCapEl = $("#long-cap");
   const goEl = $("#go");
   const resultEl = $("#result");
   const weeksEl = $("#weeks");
 
   const saved = (store.get("mb_fk") || "").match(/^(\d{1,2}):([0-5]\d)$/);
   if (saved){ fkMinEl.value = saved[1]; fkSecEl.value = saved[2]; }
+  longStartEl.value = store.get("mb_longStart") || "";
+  longCapEl.value = store.get("mb_longCap") || "";
+  const savedMp = store.get("mb_mpKm");
+  if (savedMp) mpOverrideKm = parseFloat(savedMp);
 
-  [fkMinEl, fkSecEl].forEach(el => {
+  [fkMinEl, fkSecEl, mpMinEl, mpSecEl, longStartEl, longCapEl].forEach(el => {
     el.addEventListener("input", () => {
-      el.value = el.value.replace(/\D/g, "").slice(0, 2);
+      el.value = el.value.replace(/\D/g, "").slice(0, el === longStartEl || el === longCapEl ? 3 : 2);
     });
   });
   fkMinEl.addEventListener("input", () => {
     if (fkMinEl.value.length === 2) fkSecEl.focus();
   });
+  mpMinEl.addEventListener("input", () => {
+    if (mpMinEl.value.length === 2) mpSecEl.focus();
+  });
   const fkStr = () => `${fkMinEl.value}:${fkSecEl.value.padStart(2, "0")}`;
+
+  longStartEl.addEventListener("change", () => {
+    store.set("mb_longStart", longStartEl.value);
+    if (fiveKSec) renderWeeks();
+  });
+  longCapEl.addEventListener("change", () => {
+    store.set("mb_longCap", longCapEl.value);
+    if (fiveKSec) renderWeeks();
+  });
+
+  [mpMinEl, mpSecEl].forEach(el => el.addEventListener("change", () => {
+    if (!mpMinEl.value && !mpSecEl.value){
+      mpOverrideKm = null; store.set("mb_mpKm", "");
+      if (fiveKSec){ updateMpHint(); renderWeeks(); }
+      return;
+    }
+    const t = parseTime(`${mpMinEl.value}:${mpSecEl.value.padStart(2,"0")}`);
+    if (t === null) return;
+    mpOverrideKm = state.paceUnit === "km" ? t : t / MI_TO_KM;
+    store.set("mb_mpKm", String(mpOverrideKm));
+    if (fiveKSec){ updateMpHint(); renderWeeks(); }
+  }));
 
   // ---- toggles ----
   document.querySelectorAll("[data-pace-unit]").forEach(btn => {
@@ -316,7 +384,7 @@
       state.paceUnit = btn.dataset.paceUnit;
       store.set("mb_paceUnit", state.paceUnit);
       syncSeg();
-      if (zones) renderWeeks();
+      if (fiveKSec){ updateMpHint(); renderWeeks(); }
     });
   });
   function syncSeg(){
@@ -325,7 +393,7 @@
   }
   syncSeg();
 
-  // ---- pace math (matches the source spreadsheet's own formulas) ----
+  // ---- pace math ----
   function parseTime(str){
     const m = String(str).trim().match(/^(\d{1,2}):([0-5]\d)$/);
     if (!m) return null;
@@ -337,26 +405,41 @@
     return Math.floor(sec/60) + ":" + String(sec % 60).padStart(2,"0");
   }
   const MI_TO_KM = 1.60934;
-  const toUnit = secPerKm => state.paceUnit === "km" ? secPerKm : secPerKm * MI_TO_KM;
+  const fromKm = secPerKm => state.paceUnit === "km" ? secPerKm : secPerKm * MI_TO_KM;
+  const fromMi = secPerMi => state.paceUnit === "mi" ? secPerMi : secPerMi / MI_TO_KM;
 
-  function computeZones(T){
-    const perKm5k = T / 5;
-    return {
-      easy: perKm5k * 1.485,
-      c: perKm5k * ((1.065 + 1.095) / 2),   // "15K" zone — fastest, 3-min reps
-      e: perKm5k * ((1.09  + 1.12 ) / 2),   // "HM" zone — middle, 5/6-min reps
-      g: perKm5k * ((1.11  + 1.145) / 2),   // "30K/MP" zone — slowest, 9/10/12/15-min reps
-    };
+  // easy pace and the default goal-MP estimate come from the marathon spreadsheet's
+  // own ratio formulas (sec per km); rep paces come from the Sub-T Converter's
+  // book-table regression formulas (sec per mile) so both tools agree for a given 5K time
+  function easyPaceKm(T){ return (T / 5) * 1.485; }
+  function defaultMpKm(T){ return (T / 5) * ((1.11 + 1.145) / 2); }
+  function repPaceMi(T, repMin){
+    if (repMin <= 3) return 0.321496 * T + 22.44;
+    if (repMin <= 6) return 0.328865 * T + 24.18;
+    return 0.338341 * T + 25.98; // covers 9, 10, 12, 15 min
   }
-  function zoneForRepMin(min){
-    if (min <= 3) return "c";
-    if (min <= 6) return "e";
-    return "g";
+
+  function goalMpKm(){ return mpOverrideKm !== null ? mpOverrideKm : defaultMpKm(fiveKSec); }
+  function easyPaceUnit(){ return fromKm(easyPaceKm(fiveKSec)); }
+  function mpPaceUnit(){ return fromKm(goalMpKm()); }
+  function repPaceUnit(repMin, atypical){
+    let p = repPaceMi(fiveKSec, repMin);
+    if (atypical) p *= 1.01;
+    return fromMi(p);
   }
+
   function restFor(day){
     if (day.restNote) return day.restNote;
     if (day.t !== "subt" || day.reps <= 1) return null;
     return day.repMin <= 6 ? "60s" : "90s";
+  }
+
+  // ---- long-run cap ramp: week 11 = cap, -5 min/week for earlier weeks, floored at start ----
+  function longRunMinutesFor(week){
+    const cap = parseFloat(longCapEl.value) || 180;
+    const start = parseFloat(longStartEl.value) || 0;
+    if (week > 11) return null;
+    return Math.max(start, cap - 5 * (11 - week));
   }
 
   function escapeHtml(str){
@@ -385,49 +468,69 @@
 
   // ---- card rendering ----
   const TYPE_META = {
-    easy:      { label: "Easy",       accent: "var(--s0)" },
-    subt:      { label: "Sub-T",      accent: "var(--s1)" },
-    race:      { label: "Race",       accent: "var(--s4)" },
-    prog:      { label: "Progressive",accent: "var(--s2)" },
-    longtempo: { label: "Long + Tempo", accent: "var(--s2)" },
-    marathon:  { label: "Race Day",   accent: "var(--s4)" },
+    easy:           { label: "Easy",       accent: "var(--s0)" },
+    subt:           { label: "Sub-T",      accent: "var(--s1)" },
+    race:           { label: "Race",       accent: "var(--s4)" },
+    prog:           { label: "Progressive",accent: "var(--s2)" },
+    mp_distance:    { label: "Goal MP",    accent: "var(--s2)" },
+    mp_progression: { label: "Progressive",accent: "var(--s2)" },
+    mp_reps:        { label: "Goal MP",    accent: "var(--s2)" },
+    marathon:       { label: "Race Day",   accent: "var(--s4)" },
   };
 
   function distanceFor(minutes, paceSecPerUnit){
     return (minutes * 60) / paceSecPerUnit;
   }
+  const kmToUnit = km => state.paceUnit === "km" ? km : km / MI_TO_KM;
 
-  function dayCardHTML(day){
+  function dayCardHTML(day, weekNum){
     const meta = TYPE_META[day.t];
     const unit = state.paceUnit;
     let main = "", detail = "";
 
     if (day.t === "easy"){
-      const pace = toUnit(zones.easy);
-      const dist = distanceFor(day.min, pace);
-      main = `${Math.round(day.min)} <span class="unit">min</span>`;
+      const pace = easyPaceUnit();
+      const minutes = day.longrun ? longRunMinutesFor(weekNum) : day.min;
+      const dist = distanceFor(minutes, pace);
+      main = `${Math.round(minutes)} <span class="unit">min</span>`;
       detail = `${fmtPace(pace)} / ${unit} easy · ~${dist.toFixed(1)} ${unit}`;
+      if (day.longrun) detail += " · long run";
     } else if (day.t === "subt"){
-      const zoneKey = zoneForRepMin(day.repMin);
-      const pace = toUnit(zones[zoneKey]);
+      const pace = repPaceUnit(day.repMin, day.atypical);
       const rest = restFor(day);
       main = `${fmtPace(pace)} <span class="unit">/ ${unit}</span>`;
       const parts = [`${day.reps}×${day.repMin}'`];
       if (rest) parts.push(`rest ${escapeHtml(rest)}`);
       if (day.wu) parts.push(`${day.wu}min WU/CD`);
       detail = parts.join(" · ");
+      if (day.atypical) detail += " · 101% of 3×10' pace";
       if (day.note) detail += ` · ${escapeHtml(day.note)}`;
     } else if (day.t === "race"){
       const label = day.dist === 21.1 ? "Half Marathon" : `${day.dist}K`;
       main = label;
       detail = "Race effort — not a prescribed training pace";
-    } else if (day.t === "prog" || day.t === "longtempo"){
-      const pace = toUnit(zones.g);
+    } else if (day.t === "prog"){
+      const pace = mpPaceUnit();
       main = `${fmtPace(pace)} <span class="unit">/ ${unit}</span>`;
       const parts = [];
       if (day.wu) parts.push(`${day.wu}min WU/CD`);
-      parts.push(`${day.min}min core`);
+      parts.push(`${day.min}min core, ramping to goal MP`);
       detail = parts.join(" · ") + (day.note ? ` · ${escapeHtml(day.note)}` : "");
+    } else if (day.t === "mp_distance"){
+      const pace = mpPaceUnit();
+      const distUnit = kmToUnit(day.distKm);
+      main = `${fmtPace(pace)} <span class="unit">/ ${unit}</span>`;
+      detail = `${distUnit.toFixed(1)} ${unit} at goal MP · ${day.wuEach}min WU + ${day.wuEach}min CD (${day.wuEach*2} total)`;
+    } else if (day.t === "mp_progression"){
+      const segs = day.segments.map(s => `${s.min}min @ ${s.pct}% MP (${fmtPace(mpPaceUnit() / (s.pct/100))}/${unit})`);
+      main = `${fmtPace(mpPaceUnit())} <span class="unit">/ ${unit} MP</span>`;
+      detail = `${day.wuEach}min WU/CD each side (${day.wuEach*2} total) · ` + segs.join(" → ");
+      if (day.note) detail += ` · ${escapeHtml(day.note)}`;
+    } else if (day.t === "mp_reps"){
+      const pace = mpPaceUnit();
+      main = `${fmtPace(pace)} <span class="unit">/ ${unit}</span>`;
+      detail = `${day.reps}×${day.repMin}' at goal MP · rest ${escapeHtml(day.restNote)} · ${day.wuEach}min WU/CD each side (${day.wuEach*2} total)`;
+      if (day.note) detail += ` · ${escapeHtml(day.note)}`;
     } else if (day.t === "marathon"){
       main = "MARATHON";
       detail = `${day.dist} km — this is the day`;
@@ -444,35 +547,52 @@
   // warm-up/cool-down minutes count as easy-pace mileage & easy time, per the
   // same treatment the source spreadsheet gives WU/CD
   function computeWeekStats(week){
-    const unit = state.paceUnit;
-    const easyPace = toUnit(zones.easy);
-    const gPace = toUnit(zones.g);
+    const pace = easyPaceUnit();
+    const mp = mpPaceUnit();
     let easyMin = 0, subtMin = 0, dist = 0;
 
     week.days.forEach(day => {
       if (day.t === "easy"){
-        easyMin += day.min;
-        dist += distanceFor(day.min, easyPace);
+        const minutes = day.longrun ? longRunMinutesFor(week.week) : day.min;
+        easyMin += minutes;
+        dist += distanceFor(minutes, pace);
       } else if (day.t === "subt"){
         const wu = day.wu || 0;
         easyMin += wu;
-        dist += distanceFor(wu, easyPace);
+        dist += distanceFor(wu, pace);
         const repTotal = day.reps * day.repMin;
         subtMin += repTotal;
-        dist += distanceFor(repTotal, toUnit(zones[zoneForRepMin(day.repMin)]));
-      } else if (day.t === "prog" || day.t === "longtempo"){
+        dist += distanceFor(repTotal, repPaceUnit(day.repMin, day.atypical));
+      } else if (day.t === "prog"){
         const wu = day.wu || 0;
         easyMin += wu;
-        dist += distanceFor(wu, easyPace);
+        dist += distanceFor(wu, pace);
         subtMin += day.min;
-        dist += distanceFor(day.min, gPace);
+        dist += distanceFor(day.min, mp);
+      } else if (day.t === "mp_distance"){
+        easyMin += day.wuEach * 2;
+        dist += distanceFor(day.wuEach * 2, pace);
+        subtMin += (day.distKm * mp) / 60; // time it takes to cover distKm at MP
+        dist += kmToUnit(day.distKm);
+      } else if (day.t === "mp_progression"){
+        easyMin += day.wuEach * 2;
+        dist += distanceFor(day.wuEach * 2, pace);
+        const segMin = day.segments.reduce((s, x) => s + x.min, 0);
+        subtMin += segMin;
+        day.segments.forEach(s => dist += distanceFor(s.min, mp / (s.pct/100)));
+      } else if (day.t === "mp_reps"){
+        easyMin += day.wuEach * 2;
+        dist += distanceFor(day.wuEach * 2, pace);
+        const repTotal = day.reps * day.repMin;
+        subtMin += repTotal;
+        dist += distanceFor(repTotal, mp);
       } else if (day.t === "race"){
         const wu = day.wu || 0;
         easyMin += wu;
-        dist += distanceFor(wu, easyPace);
-        dist += unit === "km" ? day.dist : day.dist / MI_TO_KM;
+        dist += distanceFor(wu, pace);
+        dist += kmToUnit(day.dist);
       } else if (day.t === "marathon"){
-        dist += unit === "km" ? day.dist : day.dist / MI_TO_KM;
+        dist += kmToUnit(day.dist);
       }
     });
 
@@ -507,7 +627,7 @@
             <span class="week-hint">drag to reorder</span>
           </div>
           ${weekStatsHTML(week)}
-          <div class="week-grid">${days.map(dayCardHTML).join("")}</div>
+          <div class="week-grid">${days.map(d => dayCardHTML(d, week.week)).join("")}</div>
         </div>`;
     }).join("");
 
@@ -550,17 +670,26 @@
     });
   }
 
+  function updateMpHint(){
+    if (!fiveKSec) return;
+    const label = mpOverrideKm !== null ? "Custom goal MP" : "Auto-estimated goal MP";
+    mpHintEl.textContent = `${label}: ${fmtPace(mpPaceUnit())} / ${state.paceUnit}. Clear the field to auto-estimate.`;
+  }
+
   function run(){
     const T = parseTime(fkStr());
     if (T === null){ showError("pace"); weeksEl.innerHTML = ""; return; }
     store.set("mb_fk", fkStr());
     resultEl.innerHTML = "";
-    zones = computeZones(T);
+    fiveKSec = T;
+    updateMpHint();
     renderWeeks();
   }
 
   goEl.addEventListener("click", run);
   [fkMinEl, fkSecEl].forEach(el =>
+    el.addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
+  [mpMinEl, mpSecEl, longStartEl, longCapEl].forEach(el =>
     el.addEventListener("keydown", e => { if (e.key === "Enter") run(); }));
 })();
 </script>
